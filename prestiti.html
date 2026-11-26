@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<!-- Biblioteca Spes-F · Fondazione Grimaldi
+     © 2026 Angelo Alaia – Tutti i diritti riservati. Ideazione e sviluppo: Angelo Alaia. -->
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <script src="tema.js"></script>
+  <script>/* passaggi animati tra pagine: un passaggio interrotto non è un errore */addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/Transition was aborted|ViewTransition/i.test(String(r.message||r)))e.preventDefault()});['pagereveal','pageswap'].forEach(function(v){addEventListener(v,function(e){var t=e.viewTransition;if(!t)return;[t.ready,t.finished,t.updateCallbackDone].forEach(function(x){x&&x.catch(function(){})});if(v==='pageswap'&&window.__noVT)t.skipTransition();if(v==='pagereveal')document.documentElement.classList.add('vt-nav')})})</script>
+  <script type="speculationrules">{"prerender":[{"source":"document","where":{"and":[{"href_matches":"/*.html"},{"not":{"href_matches":"/login.html*"}},{"not":{"selector_matches":"[target=_blank]"}}]},"eagerness":"moderate"}]}</script>
+  <meta name="author" content="Angelo Alaia">
+  <meta name="copyright" content="© 2026 Angelo Alaia – Tutti i diritti riservati">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Prestiti | Biblioteca Spes-F</title>
+  <link rel="icon" href="icona-64.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icona-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Spes-F">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="caratteri.css">
+  <link rel="stylesheet" href="icone.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-header" class="topbar"></header>
+      <main class="content">
+
+        <div class="page-head">
+          <div>
+            <div class="title-row"><span class="page-ic c-green"><i class="fa-solid fa-right-left"></i></span><h1>Prestiti</h1></div>
+            <p>Assegna i volumi, tieni d’occhio le scadenze e registra le restituzioni.</p>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-scan" id="btn-quick-return" title="Scansiona il codice a barre o il QR dell’etichetta del libro riconsegnato"><i class="fa-solid fa-barcode"></i> Restituzione rapida</button>
+            <button class="btn btn-primary" id="btn-new"><i class="fa-solid fa-right-left"></i> Registra un prestito</button>
+          </div>
+        </div>
+
+        <div class="toolbar"><nav class="seg" aria-label="Filtra i prestiti" id="filters">
+          <button data-f="tutti" class="active">Tutti</button>
+          <button data-f="attivi">In corso</button>
+          <button data-f="ritardi">In ritardo <span class="n hidden" id="late-n">0</span></button>
+          <button data-f="restituiti">Archivio</button>
+        </nav>
+          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input class="input" id="f-search" type="search" placeholder="Libro, n. catalogo o iscritto" aria-label="Cerca tra i prestiti"></div>
+        </div>
+
+        <section class="panel">
+          <div class="table-wrap">
+            <table class="table table-cards">
+              <thead><tr><th>Volume</th><th>Iscritto</th><th>Ritiro e scadenza</th><th>Stato</th><th class="right">Azioni</th></tr></thead>
+              <tbody id="loans-tbody"></tbody>
+            </table>
+          </div>
+          <div id="loans-pager"></div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+  <div class="scrim" id="scrim"></div>
+
+  <dialog class="modal visible" id="loan-dialog" aria-labelledby="loan-title">
+    <div class="modal-h">
+      <h2 id="loan-title">Registra un prestito</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="loan-form" class="modal-b">
+      <div class="field"><label>Volume da prestare *</label>
+        <div class="combo-row"><div id="loan-book"></div><button type="button" class="btn btn-scan" id="loan-scan" aria-label="Scansiona il codice a barre o il QR del libro" title="Scansiona il codice a barre o il QR dell’etichetta"><i class="fa-solid fa-barcode"></i></button></div>
+        <div class="copy-pick hidden" id="loan-copies" aria-live="polite"></div>
+      </div>
+      <div class="field"><label>Iscritto alla Spes-F *</label><div id="loan-member"></div></div>
+      <div class="grid2">
+        <div class="field"><label for="loan-start">Ritiro</label><input type="date" class="input" id="loan-start" required></div>
+        <div class="field"><label for="loan-end">Scadenza</label><input type="date" class="input" id="loan-end" required></div>
+      </div>
+      <p class="hint" id="loan-fit" aria-live="polite"></p>
+      <p class="muted" style="font-size:.82rem">La scadenza si calcola in automatico a <span id="loan-days"></span> giorni dal ritiro: puoi modificarla.</p>
+    </form>
+    <div class="modal-f">
+      <button type="button" class="btn" data-close>Annulla</button>
+      <button type="submit" form="loan-form" class="btn btn-primary">Conferma il prestito</button>
+    </div>
+  </dialog>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-app-compat.js"></script>
+  <script src="firebase-auth-compat.js"></script>
+  <script src="firebase-firestore-compat.js"></script>
+  <script src="cloud.js"></script>
+  <script src="state.js"></script>
+  <script src="app.js"></script>
+  <script src="scanner.js"></script>
+  <script>
+    const $id = (id) => document.getElementById(id);
+    let filter = 'tutti', bookCombo, memberCombo;
+    const pg = { page: 1 };
+
+    function setFilter(f) {
+      filter = f; pg.page = 1;
+      $$('#filters button').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+      render();
+    }
+
+    function render() {
+      const loans = store.getCalculatedLoans();
+      const late = loans.filter(l => !l.dataRestituzione && l.computedStatus === 'In ritardo').length;
+      $id('late-n').textContent = late; $id('late-n').classList.toggle('hidden', late === 0);
+
+      const q = $id('f-search').value;
+      const list = loans.filter(l =>
+        filter === 'attivi' ? !l.dataRestituzione :
+        filter === 'ritardi' ? !l.dataRestituzione && l.computedStatus === 'In ritardo' :
+        filter === 'restituiti' ? !!l.dataRestituzione : true)
+        .filter(l => !q || store.matchCatalog(l.libro, q) || matches(q, l.libro.titolo, l.libro.autore, l.libro.id, l.libro.catalogo || '', l.libro.isbn || '', l.socio.nome, l.socio.cognome, store.clubName(l.socio.clubId)));
+
+      const info = UI.pageSlice(list, pg, 20);
+      $id('loans-pager').innerHTML = UI.pager(info, 'prestiti');
+      $id('loans-tbody').innerHTML = list.length ? info.items.map(l => `
+        <tr>
+          <td data-label="Volume"><div class="cell-title">${esc(l.libro.titolo)}</div><div class="cell-sub">${UI.catTag(l.libro.catalogo) || `<span class="mono">${esc(l.libro.id)}</span>`}${l.libro.autore ? ` <span>${esc(l.libro.autore)}</span>` : ''}</div></td>
+          <td data-label="Iscritto"><div class="cell-title">${esc(l.socio.nome)} ${esc(l.socio.cognome)}</div><div class="cell-sub">${esc(store.clubName(l.socio.clubId))}</div></td>
+          <td data-label="Ritiro" class="mono"><div>${D.fmt(l.dataUscita)}</div><div class="cell-sub">${l.dataRestituzione ? 'rientrato ' + D.fmt(l.dataRestituzione) : 'scade ' + D.fmt(l.dataScadenza)}</div></td>
+          <td data-label="Stato">${UI.statusTag(l)}</td>
+          <td class="right">${l.dataRestituzione ? '<span class="muted"><i class="fa-solid fa-lock"></i> Chiuso</span>' : `<span class="actions">
+            <button class="btn btn-sm" data-renew="${esc(l.id)}">Rinnova</button>
+            <button class="btn btn-sm" data-return="${esc(l.id)}">Restituisci</button></span>`}</td>
+        </tr>`).join('')
+        : `<tr><td colspan="5">${UI.empty('fa-inbox', 'Nessun prestito da mostrare', 'Cambia filtro oppure registra un nuovo prestito: bastano pochi secondi.')}</td></tr>`;
+      staggerOnce($id('loans-tbody'));
+    }
+
+    function openLoan() {
+      if (!store.getBooks().some(b => b.stato === 'Disponibile')) return toast('Nessun volume disponibile in catalogo.', 'err');
+      if (!store.getMembers().length) return toast('Registra prima almeno un iscritto alla Spes-F.', 'err');
+      bookCombo.clear(); memberCombo.clear(); $id('loan-fit').textContent = '';
+      $id('loan-days').textContent = FG.giorniPrestito;
+      const today = D.today();
+      $id('loan-start').value = D.iso(today);
+      $id('loan-end').value = D.iso(D.add(today, FG.giorniPrestito));
+      openDlg('loan-dialog');
+      setTimeout(() => bookCombo.focus(), 60);
+    }
+
+    /* Nel prestito: si scansiona il libro e si sceglie da solo la prima copia disponibile */
+    async function scanForLoan(fit) {
+      const r = await Scanner.scan('Scansiona il libro da prestare', { any: true });
+      if (!r) return;
+      if (r.type === 'catalogo') {
+        const b = store.findByCatalog(r.value);
+        if (!b) return toast(`Nessun volume con il numero ${r.value}.`, 'err');
+        if (b.stato !== 'Disponibile') return toast(`${b.catalogo} “${b.titolo}” è già in prestito.`, 'err');
+        bookCombo.set(b.id, `${b.titolo} · ${b.catalogo}`); fit();
+        toast(`Selezionato: ${b.catalogo} · ${b.titolo}`);
+        if (!memberCombo.value) memberCombo.focus();
+        return;
+      }
+      const isbn = r.value;
+      const copies = store.copiesOf(isbn);
+      if (!copies.length) return toast('Nessun libro con questo ISBN in catalogo: aggiungilo prima dal Catalogo.', 'err');
+      const free = copies.filter(b => b.stato === 'Disponibile');
+      if (!free.length) return toast(`Tutte le copie di “${copies[0].titolo}” sono già in prestito.`, 'err');
+      free.sort((a, b) => BiblioStore.catNumber(a.catalogo) - BiblioStore.catNumber(b.catalogo) || a.id.localeCompare(b.id));
+      bookCombo.set(free[0].id, `${free[0].titolo} · ${free[0].catalogo}`);
+      fit();
+      toast(copies.length > 1 ? `Selezionata la copia ${free[0].catalogo} (${free.length} disponibili su ${copies.length})` : `Selezionato: ${free[0].catalogo} · ${free[0].titolo}`);
+      if (!memberCombo.value) memberCombo.focus();
+    }
+
+    /* Restituzione rapida: si scansiona il libro riconsegnato e si chiude il suo prestito */
+    async function quickReturn() {
+      const r0 = await Scanner.scan('Scansiona il libro riconsegnato', { any: true });
+      if (!r0) return;
+      let copies;
+      if (r0.type === 'catalogo') {
+        const b = store.findByCatalog(r0.value);
+        if (!b) return toast(`Nessun volume con il numero ${r0.value}.`, 'err');
+        copies = [b];
+      } else copies = store.copiesOf(r0.value);
+      const isbn = r0.value;
+      if (!copies.length) return toast('Nessun libro con questo ISBN in catalogo.', 'err');
+      const ids = new Set(copies.map(b => b.id));
+      const active = store.getCalculatedLoans().filter(l => !l.dataRestituzione && ids.has(l.libroId));
+      if (!active.length) return toast(`“${copies[0].titolo}” non risulta in prestito.`, 'err');
+      if (active.length > 1) {
+        $id('f-search').value = isbn; setFilter('attivi');
+        return toast(`${active.length} copie di “${copies[0].titolo}” sono in prestito: premi Restituisci sulla riga giusta.`);
+      }
+      const l = active[0];
+      if (!(await UI.confirm(`${l.libro.catalogo || l.libro.id} · “${l.libro.titolo}”\nRiconsegnato da ${l.socio.nome} ${l.socio.cognome}, in data di oggi.`, { title: 'Registrare la restituzione?', ok: 'Registra il rientro' }))) return;
+      const r = store.returnLoan(l.id);
+      if (!r.ok) return toast(r.error, 'err');
+      toast(`Rientrato${r.catalogo ? ' ' + r.catalogo : ''}: ${r.titolo}`); updateBadge(); render();
+    }
+
+    onReady(() => {
+      $id('filters').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (b) setFilter(b.dataset.f); });
+      $id('f-search').addEventListener('input', () => { pg.page = 1; render(); });
+      UI.bindPager($id('loans-pager'), pg, render);
+      /* Un risultato per titolo: si presta sempre una copia precisa, e il gestionale propone la prima disponibile
+         (oppure proprio quella cercata, se si scrive il suo numero di catalogo) */
+      bookCombo = makeCombo($id('loan-book'), { label: 'Volume', placeholder: 'Titolo, autore, ISBN o n. catalogo (C-0012)', empty: 'Nessun volume con questo nome o numero',
+        items: (q) => {
+          const exact = BiblioStore.isCatCode(q) ? store.findByCatalog(q) : null;
+          const hit = (b) => store.matchCatalog(b, q) || (ISBN.normalize(q) && ISBN.same(b.isbn, q)) || matches(q, b.titolo, b.autore, b.id, b.catalogo || '', b.isbn || '', b.scaffale, b.genere, ...(b.clubIds || []).map(id => store.clubName(id)));
+          return store.getTitles().filter(t => t.copies.some(hit)).map((t) => {
+            const wanted = exact && t.copies.find(c => c.id === exact.id);
+            const pick = wanted && wanted.stato === 'Disponibile' ? wanted : t.copies.find(c => c.stato === 'Disponibile');
+            const b = pick || wanted || t.first;
+            return { value: pick ? pick.id : '', disabled: !pick, label: pick ? `${b.titolo} · ${b.catalogo}` : b.titolo,
+              sub: `${b.autore} · ${b.genere}${pick && b.scaffale ? ' · scaffale ' + b.scaffale : ''}${(b.clubIds || []).length ? ' · ' + b.clubIds.map(id => store.clubName(id)).join(', ') : ''}`,
+              badge: t.total > 1 ? `${t.total} copie · ${t.available === 1 ? '1 disponibile' : t.available + ' disponibili'}` : (pick ? '' : 'In prestito'), tone: pick ? 'ok' : 'warn' };
+          }).sort((a, b) => (a.disabled ? 1 : 0) - (b.disabled ? 1 : 0));
+        } });
+      /* Sotto al campo: la copia proposta e le altre copie dello stesso titolo, per cambiarla con un tocco */
+      const showCopies = () => {
+        const el = $id('loan-copies'), b = store.getBooks().find(x => x.id === bookCombo.value);
+        const group = b ? store.copiesOfBook(b) : [];
+        if (group.length < 2) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+        const free = group.filter(c => c.stato === 'Disponibile').length;
+        el.innerHTML = `<p><i class="fa-solid fa-layer-group"></i> <b>${group.length} copie</b> di questo titolo, ${free === 1 ? '1 disponibile' : free + ' disponibili'}. Presti la copia <b class="mono">${esc(b.catalogo)}</b>${b.scaffale ? ` (scaffale ${esc(b.scaffale)})` : ''}: se hai in mano un’altra copia, toccala qui sotto.</p>
+          <div class="copy-chips" role="group" aria-label="Scegli la copia da prestare">${group.map(c => { const out = c.stato !== 'Disponibile'; return `<button type="button" class="copy-chip ${out ? 'out' : ''}" data-copy="${esc(c.id)}" aria-pressed="${c.id === b.id}" ${out ? 'disabled' : ''} title="${out ? 'Già in prestito' : 'Presta questa copia'}"><span class="mono">${esc(c.catalogo)}</span><small>${out ? 'in prestito' : esc(c.scaffale || 'Archivio')}</small></button>`; }).join('')}</div>`;
+        el.classList.remove('hidden');
+      };
+      $id('loan-copies').addEventListener('click', (e) => {
+        const c = e.target.closest('.copy-chip'); if (!c || c.disabled) return;
+        const b = store.getBooks().find(x => x.id === c.dataset.copy); if (!b || b.stato !== 'Disponibile') return;
+        bookCombo.set(b.id, `${b.titolo} · ${b.catalogo}`);
+      });
+      bookCombo.el.addEventListener('combo', showCopies); bookCombo.el.addEventListener('combo-clear', showCopies);
+      /* ISBN scritto (o letto da un lettore di codici a barre): si sceglie da sola la prima copia disponibile */
+      bookCombo.el.addEventListener('input', () => {
+        const isbn = ISBN.normalize(bookCombo.text); if (!isbn || bookCombo.value) return;
+        const copies = store.copiesOf(isbn); if (!copies.length) return;
+        const free = copies.filter(b => b.stato === 'Disponibile').sort((a, b) => BiblioStore.catNumber(a.catalogo) - BiblioStore.catNumber(b.catalogo));
+        if (!free.length) return toast(`Tutte le copie di “${copies[0].titolo}” sono già in prestito.`, 'err');
+        bookCombo.set(free[0].id, `${free[0].titolo} · ${free[0].catalogo}`);
+        if (copies.length > 1) toast(`Proposta la copia ${free[0].catalogo} (${free.length} disponibili su ${copies.length})`);
+        if (!memberCombo.value) memberCombo.focus();
+      });
+      memberCombo = makeCombo($id('loan-member'), { label: 'Iscritto', placeholder: 'Cerca per nome, cognome o club', empty: 'Nessun iscritto con questo nome',
+        items: (q) => store.getMembers().filter(m => matches(q, m.nome, m.cognome, store.clubName(m.clubId), m.email, m.id)).map(m => ({ value: m.id, label: `${m.nome} ${m.cognome}`, sub: `${store.clubName(m.clubId)} · ${m.id}` })) });
+      /* Avviso se il libro non è tra quelli consigliati al club dell'iscritto */
+      const fit = () => {
+        const b = store.getBooks().find(x => x.id === bookCombo.value), m = store.getMembers().find(x => x.id === memberCombo.value), el = $id('loan-fit');
+        if (!b) { el.textContent = ''; return; }
+        const ids = b.clubIds || [];
+        const names = ids.map(id => store.clubName(id)).join(', ');
+        if (m && m.clubId && ids.length && !ids.includes(m.clubId)) { el.className = 'hint warn'; el.textContent = `Attenzione: questo libro è consigliato a ${names}, non a ${store.clubName(m.clubId)}. Puoi comunque prestarlo.`; }
+        else { el.className = 'hint'; el.textContent = ids.length ? `Consigliato a: ${names}.` : 'Libro senza club consigliato.'; }
+      };
+      bookCombo.el.addEventListener('combo', fit); memberCombo.el.addEventListener('combo', fit);
+      bookCombo.el.addEventListener('combo-clear', fit);
+      $id('loan-scan').addEventListener('click', () => scanForLoan(fit));
+      $id('btn-quick-return').addEventListener('click', quickReturn);
+      $id('btn-new').addEventListener('click', () => { openLoan(); $id('loan-fit').textContent = ''; });
+      bindLoanActions(render);
+
+      $id('loan-start').addEventListener('change', (e) => {
+        const s = D.parse(e.target.value); if (s) $id('loan-end').value = D.iso(D.add(s, FG.giorniPrestito));
+      });
+
+      $id('loan-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!bookCombo.value) { toast('Scegli un volume dall’elenco dei suggerimenti.', 'err'); return bookCombo.focus(); }
+        if (!memberCombo.value) { toast('Scegli un iscritto dall’elenco dei suggerimenti.', 'err'); return memberCombo.focus(); }
+        const r = store.addLoan({ libroId: bookCombo.value, iscrittoId: memberCombo.value, dataUscita: $id('loan-start').value, dataScadenza: $id('loan-end').value });
+        if (!r.ok) return toast(r.error, 'err');
+        const bk = store.getBooks().find(x => x.id === bookCombo.value), mb = store.getMembers().find(x => x.id === memberCombo.value);
+        toast(`Prestito registrato: ${bk ? bk.catalogo : ''} a ${mb ? `${mb.nome} ${mb.cognome}` : ''}, rientro entro il ${D.fmt($id('loan-end').value)}`, 'ok', { action: { label: 'Nuovo prestito', run: () => { openLoan(); $id('loan-fit').textContent = ''; } } });
+        closeDlg('loan-dialog'); updateBadge(); render();
+      });
+
+      const p = new URLSearchParams(location.search);
+      if (p.get('q')) $id('f-search').value = p.get('q');
+      p.get('filtro') === 'ritardi' ? setFilter('ritardi') : render();
+      if (p.get('action') === 'new') {
+        openLoan();
+        /* Arrivando dalla scheda di una copia (“Presta questa copia”) il volume è già scelto */
+        const b = p.get('libro') && store.getBooks().find(x => x.id === p.get('libro'));
+        if (b && b.stato === 'Disponibile' && $id('loan-dialog').open) { bookCombo.set(b.id, `${b.titolo} · ${b.catalogo}`); setTimeout(() => memberCombo.focus(), 80); }
+        /* Arrivando da un nuovo iscritto (“Registra un prestito”) l'iscritto è già scelto */
+        const m = p.get('iscritto') && store.getMembers().find(x => x.id === p.get('iscritto'));
+        if (m && $id('loan-dialog').open) { memberCombo.set(m.id, `${m.nome} ${m.cognome}`); setTimeout(() => bookCombo.focus(), 80); }
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<!-- Biblioteca Spes-F · Fondazione Grimaldi
+     © 2026 Angelo Alaia – Tutti i diritti riservati. Ideazione e sviluppo: Angelo Alaia. -->
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <script src="tema.js"></script>
+  <script>/* passaggi animati tra pagine: un passaggio interrotto non è un errore */addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/Transition was aborted|ViewTransition/i.test(String(r.message||r)))e.preventDefault()});['pagereveal','pageswap'].forEach(function(v){addEventListener(v,function(e){var t=e.viewTransition;if(!t)return;[t.ready,t.finished,t.updateCallbackDone].forEach(function(x){x&&x.catch(function(){})});if(v==='pageswap'&&window.__noVT)t.skipTransition();if(v==='pagereveal')document.documentElement.classList.add('vt-nav')})})</script>
+  <script type="speculationrules">{"prerender":[{"source":"document","where":{"and":[{"href_matches":"/*.html"},{"not":{"href_matches":"/login.html*"}},{"not":{"selector_matches":"[target=_blank]"}}]},"eagerness":"moderate"}]}</script>
+  <meta name="author" content="Angelo Alaia">
+  <meta name="copyright" content="© 2026 Angelo Alaia – Tutti i diritti riservati">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Riepilogo settimanale | Biblioteca Spes-F</title>
+  <link rel="icon" href="icona-64.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icona-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Spes-F">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="caratteri.css">
+  <link rel="stylesheet" href="icone.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-header" class="topbar"></header>
+      <main class="content">
+
+        <div class="page-head">
+          <div>
+            <div class="title-row"><span class="page-ic c-amber"><i class="fa-solid fa-calendar-week"></i></span><h1>Riepilogo settimanale</h1></div>
+            <p>Libri consegnati e rientrati nella settimana, divisi tra Club e Genitori. I numeri vengono dai prestiti e dalle restituzioni registrati, alla data effettiva di ogni operazione.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn keep-label" id="btn-annual" title="Il resoconto di tutto l’anno, pronto da stampare o salvare in PDF"><i class="fa-solid fa-chart-column"></i> Report annuale</button>
+            <button class="btn only-phone" id="btn-get"><i class="fa-solid fa-download"></i> Scarica</button>
+            <button class="btn not-phone" id="btn-print"><i class="fa-solid fa-print"></i> Stampa</button>
+            <button class="btn not-phone" id="btn-pdf"><i class="fa-regular fa-file-pdf"></i> PDF</button>
+            <button class="btn btn-primary not-phone" id="btn-xlsx"><i class="fa-regular fa-file-excel"></i> Excel</button>
+          </div>
+        </div>
+
+        <section class="weekbar" aria-label="Settimana di riferimento">
+          <button class="icon-btn wk-nav" id="wk-prev" aria-label="Settimana precedente"><i class="fa-solid fa-chevron-left"></i></button>
+          <div class="wk-label">
+            <span class="wk-num" id="wk-num">Settimana —</span>
+            <span class="wk-range" id="wk-range"></span>
+          </div>
+          <button class="icon-btn wk-nav" id="wk-next" aria-label="Settimana successiva"><i class="fa-solid fa-chevron-right"></i></button>
+          <div class="wk-tools">
+            <button class="btn btn-sm" id="wk-today">Questa settimana</button>
+            <label class="wk-pick"><i class="fa-regular fa-calendar"></i><span class="sr-only">Vai alla settimana del giorno</span><input type="date" class="input" id="wk-date" aria-label="Scegli un giorno per vedere la sua settimana"></label>
+          </div>
+        </section>
+
+        <section class="band" aria-label="Totali della settimana">
+          <div class="c-blue"><span class="chip"><i class="fa-solid fa-arrow-up-from-bracket"></i></span><span class="lbl">Libri consegnati</span><div class="num" id="k-out">0</div><p class="sub" id="k-out-sub">Prestiti iniziati nella settimana</p></div>
+          <div class="c-green"><span class="chip"><i class="fa-solid fa-arrow-right-to-bracket"></i></span><span class="lbl">Libri rientrati</span><div class="num" id="k-in">0</div><p class="sub">Restituzioni registrate</p></div>
+          <div class="c-orange"><span class="chip"><i class="fa-solid fa-people-roof"></i></span><span class="lbl">Club</span><div class="num" id="k-club">0</div><p class="sub" id="k-club-sub">0 consegne · 0 rientri</p></div>
+          <div class="c-teal"><span class="chip"><i class="fa-solid fa-user-group"></i></span><span class="lbl">Genitori</span><div class="num" id="k-gen">0</div><p class="sub" id="k-gen-sub">0 consegne · 0 rientri</p></div>
+        </section>
+
+        <div class="split">
+          <section class="panel">
+            <div class="panel-h"><h2>Per club</h2><span class="muted" style="font-size:.84rem">Consegne e rientri</span></div>
+            <div class="table-wrap"><table class="table table-compact table-cards cols-3">
+              <thead><tr><th>Club</th><th>Categoria</th><th class="right">Consegne</th><th class="right">Rientri</th></tr></thead>
+              <tbody id="per-club"></tbody>
+            </table></div>
+          </section>
+          <section class="panel">
+            <div class="panel-h"><h2>Settimane precedenti</h2></div>
+            <ul class="weeks" id="weeks"></ul>
+          </section>
+        </div>
+
+        <section class="panel">
+          <div class="panel-h panel-h-tools">
+            <h2>Movimentazioni</h2>
+            <div class="toolbar">
+              <nav class="seg" id="f-tipo" aria-label="Tipo di operazione">
+                <button data-v="" class="active">Tutte</button><button data-v="consegna">Consegne</button><button data-v="rientro">Rientri</button>
+              </nav>
+              <nav class="seg" id="f-cat" aria-label="Categoria">
+                <button data-v="" class="active">Club e Genitori</button><button data-v="club">Solo Club</button><button data-v="genitori">Solo Genitori</button>
+              </nav>
+              <select class="input" id="f-club" aria-label="Singolo club"><option value="">Tutti i club</option></select>
+              <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input class="input" id="f-q" type="search" placeholder="Titolo, autore, n. catalogo o nome" aria-label="Cerca tra le movimentazioni"></div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="table table-cards">
+              <thead><tr><th>Data</th><th>Operazione</th><th>N. catalogo</th><th>Libro</th><th>Destinatario</th><th>Club / Genitori</th></tr></thead>
+              <tbody id="mov"></tbody>
+            </table>
+          </div>
+          <div id="mov-pager"></div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+  <div class="scrim" id="scrim"></div>
+
+  <!-- Documento stampabile / PDF: generato con gli stessi dati della pagina -->
+  <section class="print-only report" id="report" aria-hidden="true"></section>
+  <section class="print-only annual off" id="annual" aria-hidden="true"></section>
+
+  <!-- Report annuale: scelte prima di creare il PDF -->
+  <dialog class="modal" id="annual-dialog" aria-labelledby="annual-t">
+    <div class="modal-h"><h2 id="annual-t">Report annuale</h2><button class="icon-btn" data-close aria-label="Chiudi"><i class="fa-solid fa-xmark"></i></button></div>
+    <form class="modal-b" id="annual-form">
+      <p class="hint">Un documento di due pagine con i numeri dell’anno: prestiti mese per mese, club, libri e generi più letti, lettori più attivi. Pronto da stampare o da salvare in PDF per soci e finanziatori.</p>
+      <div class="grid2">
+        <div class="field"><label for="ar-year">Anno</label><select class="input" id="ar-year"></select></div>
+        <div class="field"><label for="ar-names">Lettori più attivi</label>
+          <select class="input" id="ar-names">
+            <option value="iniziale">Nome e iniziale del cognome</option>
+            <option value="completo">Nome e cognome</option>
+            <option value="nascosto">Non mostrarli</option>
+          </select></div>
+      </div>
+      <div class="field"><label for="ar-note">Nota introduttiva <span class="opt">facoltativa</span></label>
+        <textarea class="input" id="ar-note" rows="3" maxlength="700" placeholder="Es. Un anno di letture con i ragazzi della Spes-F: grazie a volontari, famiglie e sostenitori."></textarea></div>
+      <p class="dup-note" id="ar-preview" aria-live="polite"></p>
+    </form>
+    <div class="modal-f">
+      <button type="button" class="btn" data-close>Annulla</button>
+      <button type="submit" form="annual-form" class="btn btn-primary"><i class="fa-regular fa-file-pdf"></i> Crea il PDF</button>
+    </div>
+  </dialog>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-app-compat.js"></script>
+  <script src="firebase-auth-compat.js"></script>
+  <script src="firebase-firestore-compat.js"></script>
+  <script src="cloud.js"></script>
+  <script src="state.js"></script>
+  <script src="app.js"></script>
+  <script src="export.js"></script>
+  <script>
+    const $id = (id) => document.getElementById(id);
+    const state = { day: D.today(), tipo: '', cat: '', club: '', q: '', page: 1 };
+    const PAGE = 25;
+    const CAT = { club: 'Club', genitori: 'Genitori' };
+    const TIPO = { consegna: 'Consegna', rientro: 'Rientro' };
+    const fmtDay = (iso) => { const d = D.parse(iso); return d ? d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }) : ''; };
+
+    function filtered(sum) {
+      const q = state.q.trim();
+      return sum.items.filter(x =>
+        (!state.tipo || x.tipo === state.tipo) &&
+        (!state.cat || x.categoria === state.cat) &&
+        (!state.club || (state.club === '__none' ? !x.clubId : x.clubId === state.club)) &&
+        (!q || matches(q, x.titolo, x.autore, x.destinatario, x.clubNome) || store.matchCatalog({ catalogo: x.catalogo }, q)));
+    }
+    const filterNote = () => [state.tipo && (state.tipo === 'consegna' ? 'solo consegne' : 'solo rientri'), state.cat && ('solo ' + CAT[state.cat]),
+      state.club && ('club: ' + (state.club === '__none' ? 'Nessun club' : store.clubName(state.club))), state.q && `ricerca “${state.q}”`].filter(Boolean).join(', ');
+
+    function render() {
+      const sum = store.getWeekSummary(state.day);
+      const thisWeek = D.iso(D.weekStart(D.today()));
+      $id('wk-num').textContent = `Settimana ${sum.week} · ${sum.year}${sum.from === thisWeek ? ' · in corso' : ''}`;
+      $id('wk-range').textContent = `Da lunedì ${D.fmtLong(sum.from)} a domenica ${D.fmtLong(sum.to)}`;
+      $id('wk-next').disabled = sum.from >= thisWeek;
+      $id('wk-date').value = D.iso(state.day);
+      countUp($id('k-out'), sum.consegne); countUp($id('k-in'), sum.rientri);
+      countUp($id('k-club'), sum.club.totale); countUp($id('k-gen'), sum.genitori.totale);
+      /* copie consegnate e titoli diversi: tre copie dello stesso libro sono 3 consegne ma 1 titolo */
+      const tOut = new Set(sum.items.filter(x => x.tipo === 'consegna').map(x => x.titoloKey)).size;
+      $id('k-out-sub').textContent = sum.consegne ? `${sum.consegne === 1 ? '1 copia' : sum.consegne + ' copie'} di ${tOut === 1 ? '1 titolo' : tOut + ' titoli'}` : 'Prestiti iniziati nella settimana';
+      $id('k-club-sub').textContent = `${sum.club.consegne} consegne · ${sum.club.rientri} rientri`;
+      $id('k-gen-sub').textContent = `${sum.genitori.consegne} consegne · ${sum.genitori.rientri} rientri`;
+
+      /* per club: tutti i club in archivio, anche quelli senza movimenti */
+      const rows = new Map(store.getClubsSorted().map(c => [c.id, { clubId: c.id, nome: c.nome, colore: c.colore, categoria: store.clubCategory(c), consegne: 0, rientri: 0 }]));
+      sum.perClub.forEach(r => { const k = r.clubId || '__none'; rows.set(k, { ...(rows.get(k) || r), consegne: r.consegne, rientri: r.rientri }); });
+      const list = [...rows.values()].sort((a, b) => (a.categoria === b.categoria ? 0 : a.categoria === 'club' ? -1 : 1));
+      const maxV = Math.max(1, ...list.map(r => r.consegne + r.rientri));
+      $id('per-club').innerHTML = list.map(r => `
+        <tr class="${state.club === (r.clubId || '__none') ? 'row-on' : ''}" data-club="${esc(r.clubId || '__none')}" style="cursor:pointer" title="Mostra solo questo club">
+          <td class="lead"><span class="dot-name" style="--cc:${r.colore}">${esc(r.nome)}</span>
+            <span class="minibar" aria-hidden="true"><i style="width:${(r.consegne / maxV) * 100}%"></i><b style="width:${(r.rientri / maxV) * 100}%"></b></span></td>
+          <td data-label="Categoria"><span class="tag plain ${r.categoria === 'genitori' ? 'cat-gen' : 'cat-club'}">${CAT[r.categoria]}</span></td>
+          <td data-label="Consegne" class="right mono">${r.consegne}</td><td data-label="Rientri" class="right mono">${r.rientri}</td>
+        </tr>`).join('') || `<tr><td colspan="4">${UI.empty('fa-people-roof', 'Nessun club in archivio')}</td></tr>`;
+
+      /* settimane precedenti: le ultime 8, con i loro totali */
+      const weeks = [];
+      for (let i = 0; i < 8; i++) { const d = D.add(D.weekStart(D.today()), -7 * i); const w = store.getWeekSummary(d); weeks.push(w); }
+      $id('weeks').innerHTML = weeks.map(w => `
+        <li><button class="wk-row ${w.from === sum.from ? 'on' : ''}" data-day="${w.from}">
+          <span><b>Settimana ${w.week}</b><small>${esc(D.fmtRange(w.from, w.to))}</small></span>
+          <span class="wk-tot"><span title="Consegne"><i class="fa-solid fa-arrow-up"></i>${w.consegne}</span><span title="Rientri"><i class="fa-solid fa-arrow-down"></i>${w.rientri}</span></span>
+        </button></li>`).join('');
+
+      /* elenco */
+      const clubSel = $id('f-club'), keep = state.club;
+      clubSel.innerHTML = '<option value="">Tutti i club</option>' + store.getClubsSorted().map(c => `<option value="${esc(c.id)}">${esc(c.nome)} · ${CAT[store.clubCategory(c)]}</option>`).join('') + '<option value="__none">Nessun club</option>';
+      clubSel.value = keep;
+      const items = filtered(sum), pg = UI.pageSlice(items, state, PAGE);
+      $id('mov').innerHTML = pg.items.length ? pg.items.map(x => `
+        <tr>
+          <td data-label="Data" class="mono">${esc(fmtDay(x.data))}</td>
+          <td data-label="Operazione"><span class="op op-${x.tipo}"><i class="fa-solid ${x.tipo === 'consegna' ? 'fa-arrow-up' : 'fa-arrow-down'}"></i>${TIPO[x.tipo]}</span></td>
+          <td data-label="N. catalogo">${UI.catTag(x.catalogo) || '<span class="muted">—</span>'}</td>
+          <td data-label="Libro" class="lead"><div class="cell-title">${esc(x.titolo)}</div><div class="cell-sub">${esc(x.autore)}</div></td>
+          <td data-label="Destinatario">${esc(x.destinatario)}</td>
+          <td data-label="Club / Genitori"><span class="tag plain ${x.categoria === 'genitori' ? 'cat-gen' : 'cat-club'}">${CAT[x.categoria]}</span> <span class="cell-sub">${esc(x.clubNome)}</span></td>
+        </tr>`).join('')
+        : `<tr><td colspan="6">${UI.empty('fa-calendar-xmark', sum.items.length ? 'Nessuna movimentazione con questi filtri' : 'Nessuna movimentazione in questa settimana', sum.items.length ? 'Prova a togliere qualche filtro.' : 'Le consegne e i rientri registrati compariranno qui.')}</td></tr>`;
+      $id('mov-pager').innerHTML = UI.pager(pg, 'movimentazioni');
+      const url = new URL(location.href); url.searchParams.set('settimana', sum.from); history.replaceState(null, '', url);
+      return { sum, items };
+    }
+
+    /* ---------- Report annuale: documento di due pagine ---------- */
+    const MESI = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+    const MESI_LUNGHI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+    function buildAnnual(r, opt) {
+      const n = (v) => Number(v || 0).toLocaleString('it-IT');
+      const who = (x) => opt.names === 'completo' ? (x.nome ? `${x.nome} ${x.cognome}` : x.esteso)
+        : (x.nome ? `${x.nome} ${(x.cognome || '').trim().charAt(0)}${x.cognome ? '.' : ''}` : (x.esteso || '').split(' ').map((w, i, a) => i === a.length - 1 && a.length > 1 ? w.charAt(0) + '.' : w).join(' '));
+      /* grafico mese per mese */
+      const W = 720, H = 210, padB = 26, padT = 18, max = Math.max(1, ...r.perMese.map(m => Math.max(m.consegne, m.rientri)));
+      const gw = W / 12, bw = Math.min(18, gw / 3), Y = (v) => H - padB - (v / max) * (H - padB - padT);
+      const bars = r.perMese.map((m, i) => {
+        const x = i * gw + gw / 2;
+        const bar = (v, dx, cls) => v ? `<rect class="${cls}" x="${(x + dx).toFixed(1)}" y="${Y(v).toFixed(1)}" width="${bw}" height="${(H - padB - Y(v)).toFixed(1)}" rx="3"/><text class="v" x="${(x + dx + bw / 2).toFixed(1)}" y="${(Y(v) - 4).toFixed(1)}">${v}</text>` : '';
+        return `${bar(m.consegne, -bw - 1, 'c')}${bar(m.rientri, 1, 'r')}<text class="m${r.meseTop === i && m.consegne ? ' top' : ''}" x="${x.toFixed(1)}" y="${H - 8}">${MESI[i]}</text>`;
+      }).join('');
+      const grid = [0.25, 0.5, 0.75, 1].map(f => `<line x1="0" x2="${W}" y1="${Y(max * f).toFixed(1)}" y2="${Y(max * f).toFixed(1)}"/>`).join('');
+      const hbars = (list, val, sub) => {
+        const top = Math.max(1, ...list.map(val));
+        return list.length ? `<ul class="ar-bars">${list.map(x => `<li><span class="l"><i style="background:${esc(x.colore || '#2A72F0')}"></i>${esc(x.nome)}</span><span class="b"><i style="width:${Math.max(2, (val(x) / top) * 100).toFixed(1)}%;background:${esc(x.colore || '#2A72F0')}"></i></span><span class="n">${n(val(x))}${sub ? `<small>${sub(x)}</small>` : ''}</span></li>`).join('')}</ul>` : '<p class="ar-none">Nessun dato per quest’anno.</p>';
+      };
+      const tot = r.perCategoria.club + r.perCategoria.genitori;
+      const pc = tot ? Math.round(r.perCategoria.club / tot * 100) : 0;
+      const kpi = [
+        ['Prestiti', n(r.consegne), r.meseTop != null && r.consegne ? `il mese più attivo: ${MESI_LUNGHI[r.meseTop]}` : 'libri consegnati nell’anno', '#2A72F0'],
+        ['Libri rientrati', n(r.rientri), r.durataMedia != null ? `tenuti in media ${r.durataMedia} giorni` : 'restituzioni registrate', '#0FAE78'],
+        ['Lettori attivi', n(r.lettori), `su ${n(r.iscrittiTotali)} iscritti`, '#7C5CFF'],
+        ['Titoli diversi letti', n(r.titoliLetti), `su ${n(r.titoli)} titoli in catalogo`, '#F59E0B'],
+        ['Nuovi iscritti', n(r.nuoviIscritti), `${n(r.iscrittiTotali)} iscritti in tutto`, '#0FA9B5'],
+        ['Restituiti in tempo', r.puntualita != null ? r.puntualita + '%' : '—', r.restituiti ? `${n(r.inTempo)} su ${n(r.restituiti)} rientri` : 'nessun rientro ancora', '#E0305A']
+      ];
+      const periodo = r.inCorso ? `dal 1° gennaio al ${D.fmtLong(r.al)}` : `dal 1° gennaio al 31 dicembre ${r.anno}`;
+      $id('annual').innerHTML = `
+        <div class="ar-page">
+          <header class="ar-cover">
+            <img src="logo-grimaldi-negativo.png" alt="Fondazione Grimaldi">
+            <div class="ar-cover-t"><span>Report annuale</span><b>${r.anno}</b><em>Biblioteca Spes-F · ${esc(FG.sede)}</em></div>
+          </header>
+          <p class="ar-period">Periodo ${esc(periodo)}${r.inCorso ? ' · anno in corso' : ''}</p>
+          ${opt.note ? `<p class="ar-note">${esc(opt.note)}</p>` : ''}
+          <div class="ar-kpis">${kpi.map(([l, v, s, c]) => `<div style="--k:${c}"><span>${l}</span><b>${v}</b><small>${esc(s)}</small></div>`).join('')}</div>
+          <h2>I prestiti mese per mese</h2>
+          <div class="ar-chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Prestiti e rientri per mese"><g class="g">${grid}</g>${bars}<line class="axis" x1="0" x2="${W}" y1="${H - padB}" y2="${H - padB}"/></svg>
+            <p class="ar-legend"><span><i class="c"></i>Prestiti</span><span><i class="r"></i>Rientri</span></p></div>
+          <div class="ar-cols">
+            <section><h2>Club e Genitori</h2>
+              ${tot ? `<div class="ar-split"><i style="width:${pc}%"></i><i style="width:${100 - pc}%"></i></div>
+              <p class="ar-split-l"><span><i class="c"></i>Club <b>${n(r.perCategoria.club)}</b> (${pc}%)</span><span><i class="g"></i>Genitori <b>${n(r.perCategoria.genitori)}</b> (${100 - pc}%)</span></p>` : '<p class="ar-none">Nessun prestito registrato.</p>'}
+            </section>
+            <section><h2>Prestiti per club</h2>${hbars(r.perClub, x => x.n, x => ` · ${x.lettori} ${x.lettori === 1 ? 'lettore' : 'lettori'}`)}</section>
+          </div>
+        </div>
+        <div class="ar-page ar-page2">
+          <div class="ar-cols">
+            <section><h2>Iscritti per club</h2>${hbars(r.perClubIscritti, x => x.n)}</section>
+            <section><h2>Generi più letti</h2>${hbars(r.generi.slice(0, 8), x => x.n)}</section>
+          </div>
+          <h2>I libri più letti</h2>
+          ${r.libri.length ? `<table class="ar-table"><thead><tr><th class="k">#</th><th>Titolo</th><th>Autore</th><th class="num">Prestiti</th><th class="num">Lettori</th></tr></thead><tbody>
+            ${r.libri.slice(0, 10).map((t, i) => `<tr><td class="k">${i + 1}</td><td class="b">${esc(t.titolo)}</td><td>${esc(t.autore)}</td><td class="num">${t.n}</td><td class="num">${t.lettori}</td></tr>`).join('')}</tbody></table>` : '<p class="ar-none">Nessun prestito registrato.</p>'}
+          ${opt.names === 'nascosto' ? '' : `<h2>I lettori più attivi</h2>
+          ${r.lettoriTop.length ? `<table class="ar-table"><thead><tr><th class="k">#</th><th>Lettore</th><th>Club</th><th class="num">Libri presi</th></tr></thead><tbody>
+            ${r.lettoriTop.slice(0, 10).map((x, i) => `<tr><td class="k">${i < 3 ? `<span class="medal m${i + 1}">${i + 1}</span>` : i + 1}</td><td class="b">${esc(who(x))}</td><td><span class="dot" style="background:${esc(x.colore || '#949AA5')}"></span>${esc(x.club)}</td><td class="num">${x.n}</td></tr>`).join('')}</tbody></table>` : '<p class="ar-none">Nessun prestito registrato.</p>'}`}
+          <footer class="ar-foot"><span>Catalogo attuale: ${n(r.volumi)} volumi, ${n(r.titoli)} titoli · Dati al ${esc(D.fmtLong(D.iso(D.today())))}</span><span>Biblioteca Spes-F – Fondazione Grimaldi · gestionale ideato e sviluppato da Angelo Alaia</span></footer>
+        </div>`;
+    }
+
+    /* ---------- Documento stampabile / PDF ---------- */
+    function buildReport() {
+      const { sum, items } = render();
+      const note = filterNote();
+      const table = (list, title) => `
+        <h3>${title} <small>(${list.length})</small></h3>
+        ${list.length ? `<table><thead><tr><th>Data</th><th>N. catalogo</th><th>Titolo</th><th>Autore</th><th>Destinatario</th><th>Club / Genitori</th></tr></thead><tbody>
+          ${list.map(x => `<tr><td>${esc(D.fmt(x.data))}</td><td class="b">${esc(x.catalogo || '—')}</td><td>${esc(x.titolo)}</td><td>${esc(x.autore)}</td><td>${esc(x.destinatario)}</td><td>${CAT[x.categoria]} · ${esc(x.clubNome)}</td></tr>`).join('')}
+        </tbody></table>` : '<p class="none">Nessuna movimentazione.</p>'}`;
+      const per = sum.perClub;
+      $id('report').innerHTML = `
+        <header class="r-head">
+          <img src="logo-grimaldi.png" alt="Fondazione Grimaldi">
+          <div><div class="r-brand">Biblioteca Spes-F</div><div class="r-sub">Fondazione Grimaldi · ${esc(FG.sede)}</div></div>
+        </header>
+        <h1>Riepilogo settimanale</h1>
+        <p class="r-week">Settimana ${sum.week} del ${sum.year} · da lunedì ${esc(D.fmtLong(sum.from))} a domenica ${esc(D.fmtLong(sum.to))}</p>
+        ${note ? `<p class="r-note">Filtri applicati: ${esc(note)}</p>` : ''}
+        <div class="r-stats">
+          <div><span>Libri consegnati</span><b>${items.filter(x => x.tipo === 'consegna').length}</b></div>
+          <div><span>Libri rientrati</span><b>${items.filter(x => x.tipo === 'rientro').length}</b></div>
+          <div><span>Club</span><b>${items.filter(x => x.categoria === 'club').length}</b><small>${items.filter(x => x.categoria === 'club' && x.tipo === 'consegna').length} consegne · ${items.filter(x => x.categoria === 'club' && x.tipo === 'rientro').length} rientri</small></div>
+          <div><span>Genitori</span><b>${items.filter(x => x.categoria === 'genitori').length}</b><small>${items.filter(x => x.categoria === 'genitori' && x.tipo === 'consegna').length} consegne · ${items.filter(x => x.categoria === 'genitori' && x.tipo === 'rientro').length} rientri</small></div>
+        </div>
+        ${per.length ? `<h3>Per club</h3><table class="r-small"><thead><tr><th>Club</th><th>Categoria</th><th>Consegne</th><th>Rientri</th></tr></thead><tbody>${per.map(r => `<tr><td>${esc(r.nome)}</td><td>${CAT[r.categoria]}</td><td>${r.consegne}</td><td>${r.rientri}</td></tr>`).join('')}</tbody></table>` : ''}
+        ${table(items.filter(x => x.tipo === 'consegna'), 'Libri consegnati')}
+        ${table(items.filter(x => x.tipo === 'rientro'), 'Libri rientrati')}
+        <footer class="r-foot">Generato il ${esc(new Date().toLocaleString('it-IT', { dateStyle: 'long', timeStyle: 'short' }))} · Biblioteca Spes-F – Fondazione Grimaldi</footer>`;
+      return sum;
+    }
+    const docName = (sum) => `Riepilogo settimanale Spes-F – settimana ${sum.week}-${sum.year}`;
+
+    function exportXlsx() {
+      const { sum, items } = render();
+      const note = filterNote();
+      const rows = items.map(x => [x.data, TIPO[x.tipo], x.catalogo, x.titolo, x.autore, x.destinatario, CAT[x.categoria], x.clubNome]);
+      const per = sum.perClub.map(r => [r.nome, CAT[r.categoria], r.consegne, r.rientri]);
+      const c = (cat, t) => items.filter(x => x.categoria === cat && x.tipo === t).length;
+      Exporter.xlsx(`riepilogo-spes-f-${sum.year}-settimana-${String(sum.week).padStart(2, '0')}`, [
+        { name: 'Riepilogo', title: `Biblioteca Spes-F – Riepilogo settimana ${sum.week}/${sum.year}`, subtitle: `Dal ${D.fmtLong(sum.from)} al ${D.fmtLong(sum.to)}${note ? ' · filtri: ' + note : ''}`,
+          columns: [{ header: 'Voce', width: 30 }, { header: 'Consegne', type: 'number', width: 12 }, { header: 'Rientri', type: 'number', width: 12 }, { header: 'Totale', type: 'number', width: 12 }],
+          rows: [['Club', c('club', 'consegna'), c('club', 'rientro'), c('club', 'consegna') + c('club', 'rientro')], ['Genitori', c('genitori', 'consegna'), c('genitori', 'rientro'), c('genitori', 'consegna') + c('genitori', 'rientro')],
+            ['Totale', items.filter(x => x.tipo === 'consegna').length, items.filter(x => x.tipo === 'rientro').length, items.length],
+            ['Titoli diversi', new Set(items.filter(x => x.tipo === 'consegna').map(x => x.titoloKey)).size, new Set(items.filter(x => x.tipo === 'rientro').map(x => x.titoloKey)).size, new Set(items.map(x => x.titoloKey)).size]] },
+        { name: 'Per club', columns: [{ header: 'Club', width: 26 }, { header: 'Categoria', width: 12 }, { header: 'Consegne', type: 'number', width: 12 }, { header: 'Rientri', type: 'number', width: 12 }], rows: per },
+        { name: 'Movimentazioni', columns: [{ header: 'Data', type: 'date', width: 12 }, { header: 'Operazione', width: 12 }, { header: 'N. catalogo', width: 13 }, { header: 'Titolo', width: 40 }, { header: 'Autore', width: 26 }, { header: 'Destinatario', width: 26 }, { header: 'Categoria', width: 11 }, { header: 'Club', width: 20 }], rows }
+      ]);
+      toast('File Excel scaricato');
+    }
+
+    const go = (d) => { state.day = d; state.page = 1; render(); };
+    onReady(() => {
+      const p = new URLSearchParams(location.search).get('settimana');
+      if (p && D.parse(p)) state.day = D.parse(p);
+      $id('wk-prev').addEventListener('click', () => go(D.add(D.weekStart(state.day), -7)));
+      $id('wk-next').addEventListener('click', () => go(D.add(D.weekStart(state.day), 7)));
+      $id('wk-today').addEventListener('click', () => go(D.today()));
+      $id('wk-date').addEventListener('change', (e) => { const d = D.parse(e.target.value); if (d) go(d); });
+      $id('weeks').addEventListener('click', (e) => { const b = e.target.closest('[data-day]'); if (b) go(D.parse(b.dataset.day)); });
+      $id('per-club').addEventListener('click', (e) => { const r = e.target.closest('[data-club]'); if (!r) return; state.club = state.club === r.dataset.club ? '' : r.dataset.club; state.page = 1; render(); });
+      [['f-tipo', 'tipo'], ['f-cat', 'cat']].forEach(([id, key]) => $id(id).addEventListener('click', (e) => {
+        const b = e.target.closest('[data-v]'); if (!b) return;
+        state[key] = b.dataset.v; state.page = 1;
+        $id(id).querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b)); render();
+      }));
+      $id('f-club').addEventListener('change', (e) => { state.club = e.target.value; state.page = 1; render(); });
+      $id('f-q').addEventListener('input', (e) => { state.q = e.target.value; state.page = 1; render(); });
+      UI.bindPager($id('mov-pager'), state, render);
+      const only = (id) => { $id('report').classList.toggle('off', id !== 'report'); $id('annual').classList.toggle('off', id !== 'annual'); };
+      $id('btn-print').addEventListener('click', () => { const s = buildReport(); only('report'); Exporter.print(docName(s)); });
+      $id('btn-pdf').addEventListener('click', () => { const s = buildReport(); only('report'); toast('Nella finestra di stampa scegli “Salva come PDF”'); Exporter.print(docName(s)); });
+      /* report annuale */
+      const arPreview = () => {
+        const r = store.getYearReport($id('ar-year').value);
+        $id('ar-preview').innerHTML = r.consegne
+          ? `<i class="fa-solid fa-chart-column"></i><span>Nel ${r.anno}${r.inCorso ? ' (fino a oggi)' : ''}: <b>${r.consegne} prestiti</b>, ${r.rientri} rientri, <b>${r.lettori} lettori</b> e ${r.titoliLetti} titoli diversi.</span>`
+          : `<i class="fa-solid fa-circle-info"></i><span>Nel ${r.anno} non ci sono ancora prestiti registrati: il report uscirà con i soli dati di catalogo e iscritti.</span>`;
+      };
+      const openAnnual = () => {
+        $id('ar-year').innerHTML = store.getReportYears().map(y => `<option value="${y}">${y}</option>`).join('');
+        try { const n = localStorage.getItem('fg_ar_names'); if (n) $id('ar-names').value = n; } catch {}
+        arPreview(); openDlg('annual-dialog');
+      };
+      $id('btn-annual').addEventListener('click', openAnnual);
+      $id('ar-year').addEventListener('change', arPreview);
+      $id('annual-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const year = $id('ar-year').value, names = $id('ar-names').value;
+        try { localStorage.setItem('fg_ar_names', names); } catch {}
+        buildAnnual(store.getYearReport(year), { names, note: $id('ar-note').value.trim() });
+        closeDlg('annual-dialog'); only('annual');
+        toast('Nella finestra di stampa scegli “Salva come PDF”');
+        Exporter.print(`Report annuale ${year} - Biblioteca Spes-F`);
+      });
+      if (new URLSearchParams(location.search).get('annuale')) { const u = new URL(location.href); u.searchParams.delete('annuale'); history.replaceState(null, '', u); setTimeout(openAnnual, 150); }
+      $id('btn-xlsx').addEventListener('click', exportXlsx);
+      $id('btn-get').addEventListener('click', async () => {
+        const v = await UI.choose('Il riepilogo della settimana mostrata, con i filtri che hai scelto.', { title: 'Scarica il riepilogo', icon: 'fa-download', options: [
+          { value: 'pdf', label: 'PDF', hint: 'Da inviare o archiviare: nella finestra di stampa scegli “Salva come PDF”.', icon: 'fa-file-pdf', primary: true },
+          { value: 'xlsx', label: 'Excel', hint: 'Tutte le movimentazioni in un foglio di calcolo.', icon: 'fa-file-excel' },
+          { value: 'print', label: 'Stampa', hint: 'Su carta, con la stampante collegata.', icon: 'fa-print' }] });
+        if (v) $id({ pdf: 'btn-pdf', xlsx: 'btn-xlsx', print: 'btn-print' }[v]).click();
+      });
+      render();
+    });
+  </script>
+</body>
+</html>

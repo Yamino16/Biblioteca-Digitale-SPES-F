@@ -1,0 +1,24 @@
+{
+  "name": "Biblioteca Spes-F – Fondazione Grimaldi",
+  "short_name": "Spes-F",
+  "description": "Catalogo, iscritti, prestiti e solleciti della Biblioteca Spes-F.",
+  "lang": "it",
+  "id": "./index.html",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#071A40",
+  "theme_color": "#0B3A75",
+  "categories": ["education", "books", "productivity"],
+  "icons": [
+    { "src": "icona-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icona-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Registra un prestito", "short_name": "Prestito", "url": "./prestiti.html?action=new", "icons": [{ "src": "icona-192.png", "sizes": "192x192" }] },
+    { "name": "Aggiungi un volume", "short_name": "Nuovo libro", "url": "./catalogo.html?action=new", "icons": [{ "src": "icona-192.png", "sizes": "192x192" }] },
+    { "name": "Solleciti", "url": "./notifiche.html", "icons": [{ "src": "icona-192.png", "sizes": "192x192" }] }
+  ]
+}

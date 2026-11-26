@@ -1,0 +1,21 @@
+Biblioteca di comunità – Fondazione Grimaldi (gestionale)
+
+Copyright © 2026 Angelo Alaia. Tutti i diritti riservati.
+All rights reserved.
+
+Ideazione, progettazione grafica e sviluppo del software: Angelo Alaia
+Instagram: @angelo.alaia – https://www.instagram.com/angelo.alaia/
+
+Il codice sorgente, la grafica, i testi e la struttura di questo gestionale sono opera
+di Angelo Alaia. Non è consentito copiare, modificare, distribuire, rivendere o
+rimuovere questa nota senza autorizzazione scritta dell'autore.
+
+Il nome e il logo "Fondazione Grimaldi Ente Filantropico" appartengono ai rispettivi
+titolari e non sono oggetto di questa nota.
+
+Componenti di terze parti inclusi (con licenza libera, restano dei rispettivi autori):
+- Font Awesome Free 6.4.0 (icone.css) – CC BY 4.0 / SIL OFL 1.1 / MIT
+- Chart.js 4.4.1 (chart.umd.min.js) – MIT
+- Bricolage Grotesque e Instrument Sans (caratteri.css) – SIL Open Font License 1.1
+- Firebase JavaScript SDK 10.14.1 (firebase-*-compat.js) – Apache License 2.0, Google LLC
+- ZXing for JS 0.21.3 (zxing.min.js) – MIT License

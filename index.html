@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<!-- Biblioteca Spes-F · Fondazione Grimaldi
+     © 2026 Angelo Alaia – Tutti i diritti riservati. Ideazione e sviluppo: Angelo Alaia. -->
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <script src="tema.js"></script>
+  <script>/* passaggi animati tra pagine: un passaggio interrotto non è un errore */addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/Transition was aborted|ViewTransition/i.test(String(r.message||r)))e.preventDefault()});['pagereveal','pageswap'].forEach(function(v){addEventListener(v,function(e){var t=e.viewTransition;if(!t)return;[t.ready,t.finished,t.updateCallbackDone].forEach(function(x){x&&x.catch(function(){})});if(v==='pageswap'&&window.__noVT)t.skipTransition();if(v==='pagereveal')document.documentElement.classList.add('vt-nav')})})</script>
+  <script type="speculationrules">{"prerender":[{"source":"document","where":{"and":[{"href_matches":"/*.html"},{"not":{"href_matches":"/login.html*"}},{"not":{"selector_matches":"[target=_blank]"}}]},"eagerness":"moderate"}]}</script>
+  <meta name="author" content="Angelo Alaia">
+  <meta name="copyright" content="© 2026 Angelo Alaia – Tutti i diritti riservati">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Dashboard | Biblioteca Spes-F</title>
+  <link rel="icon" href="icona-64.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icona-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Spes-F">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="caratteri.css">
+  <link rel="stylesheet" href="icone.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-header" class="topbar"></header>
+      <main class="content">
+
+        <div class="hero">
+          <div>
+            <h1 id="headline">Biblioteca Spes-F</h1>
+            <p id="subline"></p>
+          </div>
+          <a href="prestiti.html?action=new" class="btn btn-lemon"><i class="fa-solid fa-right-left"></i> Registra un prestito</a>
+        </div>
+
+        <section class="panel start hidden" id="start" aria-labelledby="start-t">
+          <div class="start-h">
+            <div><h2 id="start-t">Primi passi</h2><p class="panel-sub">L’archivio è pronto: bastano pochi minuti per metterlo in funzione.</p></div>
+            <span class="start-prog" id="start-prog"></span>
+          </div>
+          <ol class="start-steps" id="start-steps"></ol>
+        </section>
+
+        <div class="backup-note hidden" id="backup-note" role="status">
+          <span class="bn-ic" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>
+          <p id="backup-text"></p>
+          <button class="btn btn-sm" id="backup-now"><i class="fa-solid fa-file-arrow-down"></i> Scarica ora</button>
+        </div>
+
+        <section class="band" aria-label="Numeri della biblioteca">
+          <a href="catalogo.html" class="c-violet">
+            <span class="chip"><i class="fa-solid fa-book"></i></span><span class="lbl">Volumi in catalogo</span>
+            <div class="num" id="stat-total-books">0</div>
+            <p class="sub"><span id="stat-titles">0 titoli</span> · <span id="stat-avail-pct">0</span>% disponibile</p>
+            <div class="mini ringed" id="mini-books" aria-hidden="true"></div>
+          </a>
+          <a href="prestiti.html" class="c-green">
+            <span class="chip"><i class="fa-solid fa-right-left"></i></span><span class="lbl">Prestiti in corso</span>
+            <div class="num" id="stat-active-loans">0</div>
+            <p class="sub"><span id="stat-due-soon">0</span> in scadenza a breve</p>
+            <div class="mini" id="mini-loans" aria-hidden="true"></div>
+          </a>
+          <a href="prestiti.html?filtro=ritardi" id="band-late" class="c-red">
+            <span class="chip"><i class="fa-solid fa-hourglass-end" id="late-ic"></i></span><span class="lbl">In ritardo</span>
+            <div class="num" id="stat-overdue-loans">0</div>
+            <p class="sub" id="stat-late-sub">Da sollecitare</p>
+          </a>
+          <a href="iscritti.html" class="c-teal">
+            <span class="chip"><i class="fa-solid fa-users"></i></span><span class="lbl">Iscritti alla Spes-F</span>
+            <div class="num" id="stat-total-members">0</div>
+            <p class="sub" id="stat-members-sub">Divisi nei club</p>
+            <div class="mini" id="mini-members" aria-hidden="true"></div>
+          </a>
+        </section>
+
+        <div class="split split-even">
+          <section class="panel" aria-labelledby="wk-title">
+            <div class="panel-h">
+              <div><h2 id="wk-title">Questa settimana</h2><p class="panel-sub" id="wk-range"></p></div>
+              <a href="riepilogo.html" class="btn btn-sm"><i class="fa-solid fa-calendar-week"></i> Riepilogo completo</a>
+            </div>
+            <div class="panel-b">
+              <div class="kpis">
+                <div class="kpi"><span class="kpi-l"><i class="fa-solid fa-arrow-up-from-bracket"></i> Consegnati</span><b class="kpi-n" id="wk-out">0</b><span class="delta" id="wk-out-d"></span></div>
+                <div class="kpi"><span class="kpi-l"><i class="fa-solid fa-arrow-right-to-bracket"></i> Rientrati</span><b class="kpi-n" id="wk-in">0</b><span class="delta" id="wk-in-d"></span></div>
+              </div>
+              <div class="splitbar" id="wk-split" role="img"></div>
+              <ul class="splitbar-legend" id="wk-legend"></ul>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="ops-title">
+            <div class="panel-h"><h2 id="ops-title">Situazione per club</h2><a href="club.html" class="btn btn-sm">Vai ai club</a></div>
+            <div class="table-wrap">
+              <table class="table table-compact table-cards cols-3">
+                <thead><tr><th>Club</th><th class="num-c">Iscritti</th><th class="num-c">In lettura</th><th class="num-c">In ritardo</th></tr></thead>
+                <tbody id="ops-tbody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div class="split">
+          <section class="panel">
+            <div class="panel-h">
+              <h2>Uscite e rientri</h2>
+              <select id="chart-range" class="input" style="width:auto" aria-label="Periodo del grafico">
+                <option value="month">Ultimi 30 giorni</option>
+                <option value="year">Anno corrente</option>
+              </select>
+            </div>
+            <div class="panel-b" style="height:300px"><canvas id="loansChart" aria-label="Grafico di uscite e rientri" role="img"></canvas></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-h"><h2>Ultime attività</h2></div>
+            <ul class="log" id="activity-log-list"></ul>
+          </section>
+        </div>
+
+        <section class="panel">
+          <div class="panel-h">
+            <h2>Da seguire</h2>
+            <a href="notifiche.html" class="btn btn-sm">Vai ai solleciti</a>
+          </div>
+          <div class="table-wrap">
+            <table class="table table-cards">
+              <thead><tr><th>Volume</th><th>Iscritto</th><th>Scadenza</th><th>Stato</th><th class="right">Azioni</th></tr></thead>
+              <tbody id="dashboard-loans-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+  <div class="scrim" id="scrim"></div>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-app-compat.js"></script>
+  <script src="firebase-auth-compat.js"></script>
+  <script src="firebase-firestore-compat.js"></script>
+  <script src="cloud.js"></script>
+  <script src="state.js"></script>
+  <script src="app.js"></script>
+  <script>
+    let chart;
+
+    function drawChart() {
+      if (typeof Chart === 'undefined') { $('#loansChart').parentElement.innerHTML = UI.empty('fa-chart-line', 'Grafico non disponibile', 'Manca il file chart.umd.min.js nella cartella.'); return; }
+      const data = store.getChartData($('#chart-range').value);
+      /* colori presi dal tema attivo; le barre hanno una sfumatura verticale */
+      const css = getComputedStyle(document.documentElement), v = (n) => css.getPropertyValue(n).trim();
+      const dark = document.documentElement.dataset.theme === 'dark';
+      const grad = (a, b) => (c) => { const ar = c.chart.chartArea; if (!ar) return a; const g = c.chart.ctx.createLinearGradient(0, ar.bottom, 0, ar.top); g.addColorStop(0, a); g.addColorStop(1, b); return g; };
+      const cfg = {
+        labels: data.labels,
+        datasets: [
+          { label: 'Uscite', data: data.loans, backgroundColor: grad('#1554C0', '#3FA9FF'), hoverBackgroundColor: '#3FA9FF', borderRadius: 6, borderSkipped: false, maxBarThickness: 14, categoryPercentage: .74, barPercentage: .92 },
+          { label: 'Rientri', data: data.returns, backgroundColor: grad('#0FAE78', '#5BE3B4'), hoverBackgroundColor: '#5BE3B4', borderRadius: 6, borderSkipped: false, maxBarThickness: 14, categoryPercentage: .74, barPercentage: .92 }
+        ]
+      };
+      if (chart && chart.__theme !== (dark ? 'd' : 'l')) { chart.destroy(); chart = null; }
+      if (chart) { chart.data = cfg; chart.options.scales.y.suggestedMax = Math.max(4, Math.ceil(Math.max(...data.loans, ...data.returns) * 1.25)); chart.update(); return; }
+      chart = new Chart($('#loansChart'), {
+        type: 'bar', data: cfg,
+        options: {
+          responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+          animation: { duration: 1100, easing: 'easeOutQuart', delay: (c) => (c.type === 'data' && c.mode === 'default' ? c.dataIndex * 22 + c.datasetIndex * 90 : 0) },
+          plugins: {
+            legend: { position: 'bottom', align: 'start', labels: { usePointStyle: true, pointStyle: 'rectRounded', boxWidth: 10, boxHeight: 10, padding: 18, color: v('--mute'), font: { family: 'Instrument Sans', size: 12, weight: 600 },
+              generateLabels: (c) => c.data.datasets.map((d, i) => ({ text: d.label, fillStyle: i ? '#0FAE78' : '#2A72F0', strokeStyle: 'transparent', pointStyle: 'rectRounded', fontColor: v('--mute'), hidden: !c.isDatasetVisible(i), datasetIndex: i })) } },
+            tooltip: { backgroundColor: dark ? '#1D2C54' : '#0A1B3D', titleColor: '#fff', bodyColor: '#E7EEFB', padding: 12, cornerRadius: 12, boxPadding: 6, usePointStyle: true, titleFont: { family: 'Bricolage Grotesque', size: 13, weight: 700 }, bodyFont: { family: 'Instrument Sans', size: 12 },
+              callbacks: { labelColor: (c) => ({ backgroundColor: c.datasetIndex ? '#0FAE78' : '#2A72F0', borderColor: 'transparent', borderRadius: 3 }) } }
+          },
+          scales: {
+            x: { grid: { display: false }, border: { color: v('--line-strong') }, ticks: { color: v('--soft'), maxTicksLimit: 8, font: { family: 'Instrument Sans', size: 11 } } },
+            y: { beginAtZero: true, suggestedMax: Math.max(4, Math.ceil(Math.max(...data.loans, ...data.returns) * 1.25)), grid: { color: v('--line') }, border: { display: false, dash: [4, 4] }, ticks: { stepSize: 1, precision: 0, color: v('--soft'), font: { family: 'Instrument Sans', size: 11 } } }
+          }
+        }
+      });
+      chart.__theme = dark ? 'd' : 'l';
+    }
+
+    function renderStats() {
+      const s = store.getStats();
+      countUp($('#stat-total-books'), s.totalBooks);
+      countUp($('#stat-active-loans'), s.activeLoansCount);
+      countUp($('#stat-overdue-loans'), s.overdueLoansCount);
+      countUp($('#stat-total-members'), s.totalMembers);
+      $('#stat-avail-pct').textContent = s.availabilityPercentage;
+      $('#stat-titles').textContent = s.totalTitles === 1 ? '1 titolo' : `${s.totalTitles} titoli`;
+      $('#stat-late-sub').textContent = s.overdueLoansCount ? 'Da sollecitare' : 'Nessun ritardo: tutto in regola';
+      $('#late-ic').className = `fa-solid ${s.overdueLoansCount ? 'fa-hourglass-end' : 'fa-circle-check'}`;
+      renderMinis(s);
+      $('#stat-members-sub').textContent = s.totalClubs === 1 ? 'In 1 club' : `In ${s.totalClubs} club`;
+      $('#stat-due-soon').textContent = s.dueSoonCount;
+      $('#band-late').classList.toggle('late', s.overdueLoansCount > 0);
+
+      const h = new Date().getHours();
+      const saluto = h < 13 ? 'Buongiorno' : h < 18 ? 'Buon pomeriggio' : 'Buonasera';
+      const parts = [];
+      if (s.overdueLoansCount) parts.push(`${s.overdueLoansCount} ${s.overdueLoansCount === 1 ? 'prestito in ritardo' : 'prestiti in ritardo'}`);
+      if (s.dueSoonCount) parts.push(`${s.dueSoonCount} ${s.dueSoonCount === 1 ? 'scadenza' : 'scadenze'} nei prossimi ${FG.sogliaScadenza} giorni`);
+      $('#headline').textContent = parts.length ? `${saluto}. Oggi: ${parts.join(' e ')}.` : `${saluto}. Tutto in regola, nessun ritardo.`;
+      $('#subline').textContent = new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ` · ${FG.sede}`;
+    }
+
+    /* Mini-grafici dentro le schede dei numeri: tutti calcolati dai dati veri */
+    function renderMinis(s) {
+      /* anello: quota di copie disponibili */
+      const C = 2 * Math.PI * 20, off = C * (1 - s.availabilityPercentage / 100);
+      const ring = $('#mini-books');
+      if (!ring.firstChild) ring.innerHTML = `<svg viewBox="0 0 54 54"><circle class="ring-bg" cx="27" cy="27" r="20"/><circle class="ring" cx="27" cy="27" r="20" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"/></svg>`;
+      requestAnimationFrame(() => requestAnimationFrame(() => { const c = $('.ring', ring); if (c) c.style.strokeDashoffset = s.totalBooks ? off.toFixed(1) : C.toFixed(1); }));
+      /* linea: prestiti usciti negli ultimi 30 giorni, raggruppati a 3 giorni */
+      const d = store.getChartData('month').loans, pts = [];
+      for (let i = 0; i < d.length; i += 3) pts.push(d.slice(i, i + 3).reduce((a, b) => a + b, 0));
+      const max = Math.max(1, ...pts), W = 92, H = 46, X = (i) => (i / Math.max(1, pts.length - 1)) * W, Y = (n) => H - 5 - (n / max) * (H - 12);
+      const line = pts.map((n, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(n).toFixed(1)}`).join(' ');
+      $('#mini-loans').innerHTML = pts.some(n => n > 0) ? `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path class="ar" d="${line} L${W} ${H} L0 ${H} Z"/><path class="ln" d="${line}"/></svg>` : '';
+      /* barre: iscritti per club */
+      const members = store.getMembers(), per = store.getClubsSorted().map(c => members.filter(m => m.clubId === c.id).length).slice(0, 8);
+      const mx = Math.max(1, ...per), bw = per.length ? Math.min(14, (W - (per.length - 1) * 5) / per.length) : 0;
+      $('#mini-members').innerHTML = per.some(n => n > 0) ? `<svg viewBox="0 0 ${W} ${H}">${per.map((n, i) => { const h = Math.max(3, (n / mx) * (H - 4)); return `<rect class="bar" style="--i:${i}" x="${(W - per.length * bw - (per.length - 1) * 5 + i * (bw + 5)).toFixed(1)}" y="${(H - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3"/>`; }).join('')}</svg>` : '';
+    }
+
+    function renderLog() {
+      const logs = store.getLogs().slice(0, 6);
+      const icons = { CREATE: 'fa-plus', UPDATE: 'fa-pen', DELETE: 'fa-trash' };
+      $('#activity-log-list').innerHTML = logs.length ? logs.map(l => `
+        <li>
+          <span class="dot ${icons[l.type] ? l.type : ''}"><i class="fa-solid ${icons[l.type] || 'fa-info'}"></i></span>
+          <div><p>${esc(l.message)}</p><small>${new Date(l.timestamp).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></div>
+        </li>`).join('') : `<li>${UI.empty('fa-clock-rotate-left', 'Ancora nessuna attività', 'Quello che fai nel gestionale comparirà qui, passo dopo passo.')}</li>`;
+    }
+
+    function renderUrgent() {
+      const rows = store.getCalculatedLoans()
+        .filter(l => !l.dataRestituzione && (l.computedStatus === 'In ritardo' || l.computedStatus === 'In scadenza'))
+        .sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 6);
+      $('#dashboard-loans-tbody').innerHTML = rows.length ? rows.map(l => `
+        <tr>
+          <td data-label="Volume"><div class="cell-title">${esc(l.libro.titolo)}</div><div class="cell-sub">${UI.catTag(l.libro.catalogo) || `<span class="mono">${esc(l.libro.id)}</span>`}</div></td>
+          <td data-label="Iscritto">${esc(l.socio.nome)} ${esc(l.socio.cognome)}</td>
+          <td data-label="Scadenza" class="mono">${D.fmt(l.dataScadenza)}</td>
+          <td data-label="Stato">${UI.statusTag(l)}</td>
+          <td class="right"><span class="actions">
+            <button class="btn btn-sm" data-renew="${esc(l.id)}">Rinnova</button>
+            <button class="btn btn-sm" data-return="${esc(l.id)}">Restituisci</button>
+          </span></td>
+        </tr>`).join('') : `<tr><td colspan="5">${UI.empty('fa-circle-check', 'Tutto tranquillo', 'Nessun prestito in ritardo o in scadenza. Quando un libro sta per scadere lo trovi qui.')}</td></tr>`;
+    }
+
+    /* Settimana in corso confrontata con la precedente, dai dati reali di prestiti e restituzioni */
+    function renderWeek() {
+      const now = store.getWeekSummary(D.today()), prev = store.getWeekSummary(D.add(D.today(), -7));
+      $('#wk-range').textContent = `Settimana ${now.week} · ${D.fmtRange ? D.fmtRange(now.from, now.to) : D.fmt(now.from) + ' – ' + D.fmt(now.to)}`;
+      countUp($('#wk-out'), now.consegne); countUp($('#wk-in'), now.rientri);
+      const delta = (el, a, b) => {
+        const d = a - b;
+        el.className = 'delta ' + (d > 0 ? 'up' : d < 0 ? 'down' : 'flat');
+        el.innerHTML = `<i class="fa-solid ${d > 0 ? 'fa-arrow-trend-up' : d < 0 ? 'fa-arrow-trend-down' : 'fa-minus'}"></i> ${d > 0 ? '+' : ''}${d} vs settimana scorsa`;
+        el.title = `Settimana scorsa: ${b}`;
+      };
+      delta($('#wk-out-d'), now.consegne, prev.consegne); delta($('#wk-in-d'), now.rientri, prev.rientri);
+      const tot = now.items.length, c = now.club.totale, g = now.genitori.totale;
+      $('#wk-split').setAttribute('aria-label', `Movimentazioni: ${c} Club, ${g} Genitori`);
+      $('#wk-split').innerHTML = tot ? `<i class="sb-club" style="flex:${c}"></i><i class="sb-gen" style="flex:${g}"></i>` : '<i class="sb-empty"></i>';
+      $('#wk-legend').innerHTML = `
+        <li><span class="sw sb-club"></span><b>Club</b> ${now.club.consegne} consegne · ${now.club.rientri} rientri</li>
+        <li><span class="sw sb-gen"></span><b>Genitori</b> ${now.genitori.consegne} consegne · ${now.genitori.rientri} rientri</li>`;
+    }
+    /* Riepilogo operativo: iscritti, libri in lettura e ritardi di ogni club */
+    function renderOps() {
+      const members = store.getMembers(), active = store.getCalculatedLoans().filter(l => !l.dataRestituzione);
+      const rows = store.getClubsSorted().map(c => ({ c, n: members.filter(m => m.clubId === c.id).length, r: active.filter(l => l.socio.clubId === c.id), id: c.id }));
+      const none = { c: null, n: members.filter(m => !store.getClub(m.clubId)).length, r: active.filter(l => !store.getClub(l.socio.clubId)) };
+      if (none.n || none.r.length) rows.push(none);
+      $('#ops-tbody').innerHTML = rows.length ? rows.map(x => {
+        const late = x.r.filter(l => l.computedStatus === 'In ritardo').length;
+        return `<tr>
+          <td data-label="Club">${x.c ? `<a class="dot-name" style="--cc:${x.c.colore}" href="iscritti.html?club=${encodeURIComponent(x.c.id)}">${esc(x.c.nome)}</a> <span class="cell-sub">${esc(store.clubEta(x.c))}</span>` : '<span class="dot-name" style="--cc:#A7AEBB">Senza club</span>'}</td>
+          <td data-label="Iscritti" class="num-c">${x.n}</td>
+          <td data-label="In lettura" class="num-c">${x.r.length}</td>
+          <td data-label="In ritardo" class="num-c">${late ? `<span class="tag late">${late}</span>` : '<span class="muted">0</span>'}</td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="4">${UI.empty('fa-people-roof', 'Nessun club', 'Crea i club per vedere qui la loro situazione.')}</td></tr>`;
+    }
+
+    /* Guida al primo utilizzo: sparisce da sola quando c'è almeno un libro, un iscritto e un prestito */
+    function renderStart() {
+      const s = store.getStats(), loans = store.getLoans().length;
+      const steps = [
+        { done: s.totalClubs > 0, t: 'Controlla i club', d: s.totalClubs ? `${s.totalClubs} club pronti, con le loro fasce d’età` : 'Crea i gruppi di lettura', href: 'club.html', ic: 'fa-people-roof' },
+        { done: s.totalBooks > 0, t: 'Inserisci i libri', d: s.totalBooks ? `${s.totalBooks} ${s.totalBooks === 1 ? 'volume' : 'volumi'} in catalogo` : 'Scansiona il codice a barre: il primo sarà C-0001', href: 'catalogo.html?action=new', ic: 'fa-book-medical' },
+        { done: s.totalMembers > 0, t: 'Registra gli iscritti', d: s.totalMembers ? `${s.totalMembers} iscritti alla Spes-F` : 'Nome, club e un contatto per i solleciti', href: 'iscritti.html?action=new', ic: 'fa-user-plus' },
+        { done: loans > 0, t: 'Registra il primo prestito', d: loans ? 'Fatto: lo trovi nel riepilogo settimanale' : 'Scegli il volume e l’iscritto, la scadenza si calcola da sola', href: 'prestiti.html?action=new', ic: 'fa-right-left' }
+      ];
+      const done = steps.filter(x => x.done).length;
+      $('#start').classList.toggle('hidden', done === steps.length);
+      if (done === steps.length) return;
+      $('#start-prog').innerHTML = `<b>${done}</b> di ${steps.length}<i style="--p:${(done / steps.length) * 100}%"></i>`;
+      const next = steps.findIndex(x => !x.done);
+      $('#start-steps').innerHTML = steps.map((x, i) => `
+        <li class="${x.done ? 'done' : ''} ${i === next ? 'next' : ''}">
+          <a href="${x.href}">
+            <span class="st-ic"><i class="fa-solid ${x.done ? 'fa-check' : x.ic}"></i></span>
+            <span class="st-t"><b>${x.t}</b><small>${esc(x.d)}</small></span>
+            ${i === next ? '<i class="fa-solid fa-arrow-right st-go"></i>' : ''}
+          </a>
+        </li>`).join('');
+    }
+
+    /* Promemoria discreto: una copia di sicurezza al mese, da conservare fuori dal programma */
+    function renderBackup() {
+      const n = store.getBooks().length + store.getMembers().length, last = store.lastBackup();
+      const days = last ? Math.floor((Date.now() - new Date(last)) / 864e5) : null;
+      const show = n >= 10 && (days === null || days >= 30);
+      $('#backup-note').classList.toggle('hidden', !show);
+      if (show) $('#backup-text').innerHTML = days === null ? '<b>Non hai ancora scaricato una copia di sicurezza.</b> Ti consiglio di farne una al mese e di conservarla su una chiavetta o nel tuo Drive.' : `<b>L’ultima copia di sicurezza è di ${days} giorni fa.</b> È il momento di scaricarne una nuova.`;
+    }
+
+    function refresh() { renderStart(); renderBackup(); renderStats(); renderWeek(); renderOps(); renderLog(); renderUrgent(); drawChart(); staggerOnce($('#dashboard-loans-tbody')); staggerOnce($('#activity-log-list')); }
+
+    onReady(() => {
+      $('#chart-range').addEventListener('change', drawChart);
+      window.addEventListener('fg:theme', drawChart); /* il grafico si ridisegna con i colori del tema scelto */
+      $('#backup-now').addEventListener('click', () => { downloadBackup('copia'); toast('Copia di sicurezza scaricata'); renderBackup(); });
+      bindLoanActions(refresh);
+      refresh();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<!-- Biblioteca Spes-F · Fondazione Grimaldi
+     © 2026 Angelo Alaia – Tutti i diritti riservati. Ideazione e sviluppo: Angelo Alaia. -->
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <script src="tema.js"></script>
+  <script>/* passaggi animati tra pagine: un passaggio interrotto non è un errore */addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/Transition was aborted|ViewTransition/i.test(String(r.message||r)))e.preventDefault()});['pagereveal','pageswap'].forEach(function(v){addEventListener(v,function(e){var t=e.viewTransition;if(!t)return;[t.ready,t.finished,t.updateCallbackDone].forEach(function(x){x&&x.catch(function(){})});if(v==='pageswap'&&window.__noVT)t.skipTransition();if(v==='pagereveal')document.documentElement.classList.add('vt-nav')})})</script>
+  <script type="speculationrules">{"prerender":[{"source":"document","where":{"and":[{"href_matches":"/*.html"},{"not":{"href_matches":"/login.html*"}},{"not":{"selector_matches":"[target=_blank]"}}]},"eagerness":"moderate"}]}</script>
+  <meta name="author" content="Angelo Alaia">
+  <meta name="copyright" content="© 2026 Angelo Alaia – Tutti i diritti riservati">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Club | Biblioteca Spes-F</title>
+  <link rel="icon" href="icona-64.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icona-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Spes-F">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="caratteri.css">
+  <link rel="stylesheet" href="icone.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-header" class="topbar"></header>
+      <main class="content">
+
+        <div class="page-head">
+          <div>
+            <div class="title-row"><span class="page-ic c-orange"><i class="fa-solid fa-people-roof"></i></span><h1>Club</h1></div>
+            <p>I gruppi di lettura della Fondazione, con la fascia d’età di ciascuno. Ogni iscritto fa parte di un club e ogni libro può essere consigliato a più club.</p>
+          </div>
+          <button class="btn btn-primary" id="btn-new"><i class="fa-solid fa-plus"></i> Crea un club</button>
+        </div>
+
+        <div class="clubs" id="clubs-grid"></div>
+        <div id="clubs-empty" class="panel hidden"></div>
+
+      </main>
+    </div>
+  </div>
+  <div class="scrim" id="scrim"></div>
+
+  <dialog class="modal" id="club-dialog" aria-labelledby="club-title">
+    <div class="modal-h">
+      <h2 id="club-title">Crea un club</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="club-form" class="modal-b" autocomplete="off">
+      <input type="hidden" id="c-id">
+      <div class="field"><label for="c-nome">Nome del club *</label><input class="input" id="c-nome" required placeholder="es. Mini club"></div>
+      <div class="field">
+        <label>Fascia d’età</label>
+        <div class="grid2">
+          <div class="field"><label for="c-min" class="hint">Da (anni)</label><input type="number" class="input" id="c-min" min="0" max="120" step="1" placeholder="es. 9"></div>
+          <div class="field"><label for="c-max" class="hint">A (anni)</label><input type="number" class="input" id="c-max" min="0" max="120" step="1" placeholder="es. 11"></div>
+        </div>
+        <label class="check switch"><input type="checkbox" role="switch" id="c-adulti"><span class="sw-track" aria-hidden="true"></span><span>Club per adulti, senza limiti d’età (es. Genitori)</span></label>
+        <p class="hint" id="c-preview" aria-live="polite"></p>
+      </div>
+      <div class="field"><label for="c-desc">Descrizione (facoltativa)</label><input class="input" id="c-desc" placeholder="A chi è rivolto e cosa si fa"></div>
+      <div class="field">
+        <label>Colore</label>
+        <div class="swatches" id="c-colors" role="radiogroup" aria-label="Colore del club"></div>
+      </div>
+    </form>
+    <div class="modal-f">
+      <button type="button" class="btn" data-close>Annulla</button>
+      <button type="submit" form="club-form" class="btn btn-primary" id="c-submit">Crea il club</button>
+    </div>
+  </dialog>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-app-compat.js"></script>
+  <script src="firebase-auth-compat.js"></script>
+  <script src="firebase-firestore-compat.js"></script>
+  <script src="cloud.js"></script>
+  <script src="state.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const $id = (id) => document.getElementById(id);
+
+    function render() {
+      const clubs = store.getClubsSorted();
+      const members = store.getMembers(), books = store.getBooks();
+      const reading = store.getCalculatedLoans().filter(l => !l.dataRestituzione);
+
+      $id('clubs-empty').classList.toggle('hidden', clubs.length > 0);
+      $id('clubs-empty').innerHTML = UI.empty('fa-people-roof', 'Nessun club in archivio', 'Crea il primo club per assegnarvi iscritti e libri.');
+
+      $id('clubs-grid').innerHTML = clubs.map(c => {
+        const nSoci = members.filter(m => m.clubId === c.id).length;
+        const consigliati = books.filter(b => (b.clubIds || []).includes(c.id));
+        const nLibri = store.getTitles(consigliati).length; /* titoli diversi: le copie dello stesso libro contano una volta */
+        const nLett = reading.filter(l => l.socio.clubId === c.id).length;
+        const ranged = c.etaMin != null || c.etaMax != null;
+        const age = c.etaMin != null && c.etaMax != null ? `${c.etaMin}–${c.etaMax}` : c.etaMin != null ? `${c.etaMin}+` : c.etaMax != null ? `≤${c.etaMax}` : 'Adulti';
+        return `
+        <article class="club-card" style="--cc:${c.colore}">
+          <div class="club-band">
+            <div class="club-age">${esc(age)}${ranged ? '<small>anni</small>' : ''}</div>
+            <h3>${esc(c.nome)}</h3>
+          </div>
+          <div class="club-body">
+            ${c.descrizione ? `<p>${esc(c.descrizione)}</p>` : ''}
+            <div class="club-stats">
+              <a href="iscritti.html?club=${encodeURIComponent(c.id)}"><b>${nSoci}</b>${nSoci === 1 ? 'iscritto' : 'iscritti'}</a>
+              <a href="catalogo.html?club=${encodeURIComponent(c.id)}"><b>${nLibri}</b>${nLibri === 1 ? 'titolo' : 'titoli'}${consigliati.length > nLibri ? ` <small>${consigliati.length} copie</small>` : ''}</a>
+              <span><b>${nLett}</b>in lettura</span>
+            </div>
+          </div>
+          <div class="club-foot">
+            <button class="icon-btn" data-edit="${esc(c.id)}" aria-label="Modifica ${esc(c.nome)}"><i class="fa-solid fa-pen"></i></button>
+            <button class="icon-btn danger" data-del="${esc(c.id)}" aria-label="Elimina ${esc(c.nome)}"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </article>`;
+      }).join('');
+      staggerOnce($id('clubs-grid'));
+    }
+
+    function syncAdulti() {
+      const ad = $id('c-adulti').checked;
+      ['c-min', 'c-max'].forEach(id => { $id(id).disabled = ad; if (ad) $id(id).value = ''; });
+      preview();
+    }
+    function preview() {
+      const c = { etaMin: $id('c-min').value === '' ? null : +$id('c-min').value, etaMax: $id('c-max').value === '' ? null : +$id('c-max').value };
+      $id('c-preview').innerHTML = `Comparirà come: <span class="preview-age">${esc(store.clubEta(c))}</span>`;
+    }
+
+    function openClub(c) {
+      $id('club-form').reset();
+      $id('c-id').value = c ? c.id : '';
+      $id('club-title').textContent = c ? 'Modifica club' : 'Crea un club';
+      $id('c-submit').textContent = c ? 'Salva modifiche' : 'Crea il club';
+      const used = store.getClubs().map(x => x.colore);
+      const colore = c ? c.colore : (FG.coloriClub.find(x => !used.includes(x)) || FG.coloriClub[0]);
+      $id('c-colors').innerHTML = FG.coloriClub.map((x, i) => `<label class="swatch" style="--cc:${x}"><input type="radio" name="colore" value="${x}" ${x === colore ? 'checked' : ''} aria-label="Colore ${i + 1}"><span></span></label>`).join('');
+      if (c) {
+        $id('c-nome').value = c.nome; $id('c-desc').value = c.descrizione || '';
+        $id('c-min').value = c.etaMin ?? ''; $id('c-max').value = c.etaMax ?? '';
+        $id('c-adulti').checked = c.etaMin == null && c.etaMax == null;
+      }
+      syncAdulti();
+      openDlg('club-dialog');
+    }
+
+    onReady(() => {
+      $id('btn-new').addEventListener('click', () => openClub(null));
+      $id('c-adulti').addEventListener('change', syncAdulti);
+      ['c-min', 'c-max'].forEach(id => $id(id).addEventListener('input', preview));
+
+      $id('clubs-grid').addEventListener('click', async (e) => {
+        const ed = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
+        if (ed) openClub(store.getClub(ed.dataset.edit));
+        if (del) {
+          const c = store.getClub(del.dataset.del);
+          const nLibri = store.getTitles(store.getBooks().filter(b => (b.clubIds || []).includes(c.id))).length;
+          const nIscr = store.getMembers().filter(m => m.clubId === c.id).length;
+          if (nIscr) return toast(nIscr === 1 ? 'Il club ha 1 iscritto: spostalo in un altro club prima di eliminarlo.' : `Il club ha ${nIscr} iscritti: spostali in un altro club prima di eliminarlo.`, 'err');
+          if (!(await UI.confirm(nLibri ? `${nLibri === 1 ? '1 libro non sarà più consigliato' : nLibri + ' libri non saranno più consigliati'} a questo club.` : 'Il club verrà rimosso dall’archivio.', { title: `Eliminare il club “${c.nome}”?`, ok: 'Elimina il club', danger: true }))) return;
+          const r = store.deleteClub(c.id);
+          r.ok ? toast('Club eliminato') : toast(r.error, 'err');
+          render();
+        }
+      });
+
+      $id('club-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const adulti = $id('c-adulti').checked;
+        const data = {
+          nome: $id('c-nome').value, descrizione: $id('c-desc').value,
+          etaMin: adulti ? null : $id('c-min').value, etaMax: adulti ? null : $id('c-max').value,
+          colore: (document.querySelector('input[name="colore"]:checked') || {}).value
+        };
+        if (!adulti && data.etaMin === '' && data.etaMax === '') return toast('Indica la fascia d’età oppure spunta “Club per adulti”.', 'err');
+        const id = $id('c-id').value;
+        const r = id ? store.updateClub(id, data) : store.addClub(data);
+        if (!r.ok) return toast(r.error, 'err');
+        toast(id ? 'Club aggiornato' : 'Club creato');
+        closeDlg('club-dialog'); render();
+      });
+
+      render();
+      if (new URLSearchParams(location.search).get('action') === 'new') openClub(null);
+    });
+  </script>
+</body>
+</html>
