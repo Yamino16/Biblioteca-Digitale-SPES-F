@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<!-- Biblioteca Spes-F · Fondazione Grimaldi
+     © 2026 Angelo Alaia – Tutti i diritti riservati. Ideazione e sviluppo: Angelo Alaia. -->
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <script src="tema.js"></script>
+  <script>/* passaggi animati tra pagine: un passaggio interrotto non è un errore */addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/Transition was aborted|ViewTransition/i.test(String(r.message||r)))e.preventDefault()});['pagereveal','pageswap'].forEach(function(v){addEventListener(v,function(e){var t=e.viewTransition;if(!t)return;[t.ready,t.finished,t.updateCallbackDone].forEach(function(x){x&&x.catch(function(){})});if(v==='pageswap'&&window.__noVT)t.skipTransition();if(v==='pagereveal')document.documentElement.classList.add('vt-nav')})})</script>
+  <meta name="author" content="Angelo Alaia">
+  <meta name="copyright" content="© 2026 Angelo Alaia – Tutti i diritti riservati">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Accesso | Biblioteca Spes-F</title>
+  <link rel="icon" href="icona-64.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icona-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Spes-F">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="caratteri.css">
+  <link rel="stylesheet" href="icone.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-page">
+  <button type="button" class="icon-btn theme-btn login-theme" id="theme-btn" aria-label="Cambia tema: chiaro o scuro" title="Tema chiaro / scuro"><i class="fa-solid fa-sun"></i><i class="fa-solid fa-moon"></i></button>
+  <main class="login">
+    <section class="login-side">
+      <img src="logo-grimaldi-negativo.png" alt="Fondazione Grimaldi Ente Filantropico">
+      <h2>Ogni libro al suo posto, ogni lettore al suo libro.</h2>
+      <p>La biblioteca della Spes-F: catalogo, iscritti, prestiti e solleciti in un unico posto, dal computer e dal telefono.</p>
+      <ul class="login-feats">
+        <li style="--i:0"><i class="fa-solid fa-barcode"></i>Scansione ISBN e QR</li>
+        <li style="--i:1"><i class="fa-solid fa-layer-group"></i>Copie e numeri di catalogo</li>
+        <li style="--i:2"><i class="fa-solid fa-bell"></i>Scadenze e solleciti</li>
+        <li style="--i:3"><i class="fa-solid fa-print"></i>Etichette e riepiloghi da stampare</li>
+      </ul>
+    </section>
+    <form class="login-card" id="login-form" novalidate>
+      <h1>Biblioteca Spes-F</h1>
+      <p id="login-sub">Accedi per gestire catalogo, iscritti e prestiti.</p>
+
+      <div class="field"><label for="email">Email</label><input class="input" type="email" id="email" autocomplete="username" required></div>
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="pw">
+          <input class="input" type="password" id="password" autocomplete="current-password" required>
+          <button type="button" class="icon-btn" id="toggle-pw" aria-label="Mostra la password"><i class="fa-solid fa-eye"></i></button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="login-btn" type="submit"><i class="fa-solid fa-right-to-bracket"></i> Accedi</button>
+      <p class="login-msg" id="login-msg" role="alert" aria-live="polite"></p>
+      <p style="text-align:center"><button type="button" class="linkish" id="reset-pw">Password dimenticata?</button></p>
+      <p class="login-foot">Ideato e sviluppato da <a class="ig" href="https://www.instagram.com/angelo.alaia/" target="_blank" rel="noopener noreferrer" title="Angelo Alaia su Instagram (@angelo.alaia)"><i class="fa-brands fa-instagram"></i> Angelo Alaia</a> · © 2026 · Tutti i diritti riservati</p>
+    </form>
+  </main>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-app-compat.js"></script>
+  <script src="firebase-auth-compat.js"></script>
+  <script src="cloud.js"></script>
+  <script>
+    const $id = (id) => document.getElementById(id);
+
+    /* Effetti grafici: scheda che segue il cursore e increspatura sul pulsante */
+    (() => {
+      const calm = matchMedia('(prefers-reduced-motion: reduce)').matches, fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+      const card = document.querySelector('.login-card'), wrap = card.parentElement;
+      if (fine && !calm) {
+        wrap.addEventListener('pointermove', (e) => {
+          const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+          card.style.transform = `rotateY(${(x * 5).toFixed(2)}deg) rotateX(${(-y * 5).toFixed(2)}deg)`;
+          card.classList.add('fx-spot'); card.style.setProperty('--mx', `${e.clientX - r.left}px`); card.style.setProperty('--my', `${e.clientY - r.top}px`);
+        });
+        wrap.addEventListener('pointerleave', () => { card.style.transform = ''; card.style.removeProperty('--mx'); });
+      }
+      if (!calm) document.addEventListener('pointerdown', (e) => {
+        const b = e.target.closest('.btn'); if (!b) return;
+        const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2.2, sp = document.createElement('span');
+        sp.className = 'ripple'; sp.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+        b.appendChild(sp); setTimeout(() => sp.remove(), 650);
+      });
+    })();
+
+    document.getElementById('theme-btn').addEventListener('click', (e) => window.Theme && Theme.toggle(e));
+
+    const say = (t, c = 'err') => { $id('login-msg').textContent = t; $id('login-msg').className = `login-msg ${c}`; };
+    const params = new URLSearchParams(location.search);
+    /* Torna solo a pagine di questo sito (niente indirizzi esterni) */
+    const next = /^[a-z]+\.html(\?[\w=&%.-]*)?$/i.test(params.get('next') || '') ? params.get('next') : 'index.html';
+
+    const errore = (e) => ({
+      'auth/invalid-email': 'L’indirizzo email non è valido.',
+      'auth/missing-password': 'Inserisci la password.',
+      'auth/invalid-credential': 'Email o password non corretti.',
+      'auth/wrong-password': 'Email o password non corretti.',
+      'auth/user-not-found': 'Email o password non corretti.',
+      'auth/user-disabled': 'Questo account è stato disattivato.',
+      'auth/too-many-requests': 'Troppi tentativi. Attendi qualche minuto e riprova.',
+      'auth/network-request-failed': 'Connessione assente: controlla internet e riprova.'
+    }[e && e.code] || 'Accesso non riuscito. Riprova.');
+
+    $id('toggle-pw').addEventListener('click', () => {
+      const p = $id('password'), show = p.type === 'password';
+      p.type = show ? 'text' : 'password';
+      $id('toggle-pw').innerHTML = `<i class="fa-solid ${show ? 'fa-eye-slash' : 'fa-eye'}"></i>`;
+      $id('toggle-pw').setAttribute('aria-label', show ? 'Nascondi la password' : 'Mostra la password');
+    });
+
+    if (!window.Cloud || !Cloud.enabled) {
+      /* Modalità locale: il login non serve */
+      $id('login-sub').textContent = 'Il programma è in modalità locale: non serve accedere.';
+      $id('login-form').querySelectorAll('.field, #reset-pw').forEach(el => el.classList.add('hidden'));
+      $id('login-btn').innerHTML = 'Apri la biblioteca';
+      $id('login-form').addEventListener('submit', (e) => { e.preventDefault(); location.href = 'index.html'; });
+    } else {
+      Cloud.init();
+      if (params.get('negato')) say('Questo account non è autorizzato ad accedere alla biblioteca.');
+      firebase.auth().onAuthStateChanged(async (u) => { if (await Cloud.allowed(u)) { window.__noVT = true; location.replace(next); } });
+
+      $id('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = $id('email').value.trim(), pw = $id('password').value;
+        if (!email || !pw) return say('Inserisci email e password.');
+        $id('login-btn').disabled = true; say('Accesso in corso…', '');
+        try {
+          await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+          const { user } = await firebase.auth().signInWithEmailAndPassword(email, pw);
+          if (!(await Cloud.allowed(user))) { await firebase.auth().signOut(); say('Questo account non è autorizzato ad accedere alla biblioteca.'); }
+        } catch (err) { say(errore(err)); }
+        $id('login-btn').disabled = false;
+      });
+
+      $id('reset-pw').addEventListener('click', async () => {
+        const email = $id('email').value.trim();
+        if (!email) { $id('email').focus(); return say('Scrivi la tua email qui sopra, poi premi di nuovo “Password dimenticata?”.'); }
+        try { await firebase.auth().sendPasswordResetEmail(email); say('Se l’email è registrata, riceverai un link per scegliere una nuova password.', 'ok'); }
+        catch (err) { say(errore(err)); }
+      });
+    }
+  </script>
+</body>
+</html>

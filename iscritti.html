@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<!-- Biblioteca Spes-F · Fondazione Grimaldi
+     © 2026 Angelo Alaia – Tutti i diritti riservati. Ideazione e sviluppo: Angelo Alaia. -->
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <script src="tema.js"></script>
+  <script>/* passaggi animati tra pagine: un passaggio interrotto non è un errore */addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/Transition was aborted|ViewTransition/i.test(String(r.message||r)))e.preventDefault()});['pagereveal','pageswap'].forEach(function(v){addEventListener(v,function(e){var t=e.viewTransition;if(!t)return;[t.ready,t.finished,t.updateCallbackDone].forEach(function(x){x&&x.catch(function(){})});if(v==='pageswap'&&window.__noVT)t.skipTransition();if(v==='pagereveal')document.documentElement.classList.add('vt-nav')})})</script>
+  <script type="speculationrules">{"prerender":[{"source":"document","where":{"and":[{"href_matches":"/*.html"},{"not":{"href_matches":"/login.html*"}},{"not":{"selector_matches":"[target=_blank]"}}]},"eagerness":"moderate"}]}</script>
+  <meta name="author" content="Angelo Alaia">
+  <meta name="copyright" content="© 2026 Angelo Alaia – Tutti i diritti riservati">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Iscritti alla Spes-F | Biblioteca Spes-F</title>
+  <link rel="icon" href="icona-64.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icona-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Spes-F">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="caratteri.css">
+  <link rel="stylesheet" href="icone.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-header" class="topbar"></header>
+      <main class="content">
+
+        <div class="page-head">
+          <div>
+            <div class="title-row"><span class="page-ic c-teal"><i class="fa-solid fa-users"></i></span><h1>Iscritti alla Spes-F</h1></div>
+            <p>Chi partecipa ai club di lettura, a quale club appartiene e cosa ha in prestito.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn" id="btn-import" title="Aggiungi in un colpo solo gli iscritti di un elenco preparato (file .json)"><i class="fa-solid fa-file-import"></i> Importa elenco</button>
+            <input type="file" id="members-file" accept=".json,application/json" hidden>
+            <button class="btn btn-primary" id="btn-new"><i class="fa-solid fa-user-plus"></i> Nuovo iscritto</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input class="input" id="f-search" type="search" placeholder="Nome, email o telefono" aria-label="Cerca tra gli iscritti">
+          </div>
+          <select class="input" id="f-club" aria-label="Club"><option value="">Tutti i club</option></select>
+        </div>
+
+        <div class="people" id="members-grid"></div>
+        <div id="members-pager"></div>
+        <div id="members-empty" class="panel hidden"></div>
+
+      </main>
+    </div>
+  </div>
+  <div class="scrim" id="scrim"></div>
+
+  <dialog class="modal" id="member-dialog" aria-labelledby="member-title">
+    <div class="modal-h">
+      <h2 id="member-title">Nuovo iscritto alla Spes-F</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="member-form" class="modal-b" autocomplete="off">
+      <input type="hidden" id="m-id">
+      <div class="grid2">
+        <div class="field"><label for="m-nome">Nome *</label><input class="input" id="m-nome" required></div>
+        <div class="field"><label for="m-cognome">Cognome *</label><input class="input" id="m-cognome" required></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="m-email">Email <span class="opt">consigliata</span></label><input type="email" class="input" id="m-email" placeholder="nome@esempio.it"></div>
+        <div class="field"><label for="m-tel">Telefono o WhatsApp <span class="opt">consigliato</span></label><input type="tel" class="input" id="m-tel" placeholder="333 1234567"></div>
+      </div>
+      <p class="hint"><i class="fa-regular fa-lightbulb"></i> Email e telefono non sono obbligatori, ma servono per inviare i solleciti di riconsegna.</p>
+      <div class="grid2">
+        <div class="field"><label for="m-nascita">Data di nascita</label><input type="date" class="input" id="m-nascita"></div>
+        <div class="field"><label for="m-club">Club</label><select class="input" id="m-club"></select></div>
+      </div>
+      <p class="hint" id="m-hint" aria-live="polite">Inserisci la data di nascita e ti suggerisco il club adatto all’età.</p>
+    </form>
+    <div class="modal-f">
+      <button type="button" class="btn" data-close>Annulla</button>
+      <button type="submit" form="member-form" class="btn btn-primary" id="m-submit">Salva iscritto</button>
+    </div>
+  </dialog>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-app-compat.js"></script>
+  <script src="firebase-auth-compat.js"></script>
+  <script src="firebase-firestore-compat.js"></script>
+  <script src="cloud.js"></script>
+  <script src="state.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const $id = (id) => document.getElementById(id);
+
+    const pg = { page: 1 };
+    function render() {
+      const q = $id('f-search').value.trim().toLowerCase(), club = $id('f-club').value;
+      const loans = store.getLoans(), books = new Map(store.getBooks().map(b => [b.id, b]));
+      const list = store.getMembers().filter(m =>
+        (!q || [m.nome, m.cognome, m.email, m.telefono].some(v => (v || '').toLowerCase().includes(q))) && (!club || (club === 'none' ? !store.getClub(m.clubId) : m.clubId === club)));
+
+      $id('members-empty').classList.toggle('hidden', list.length > 0);
+      $id('members-empty').innerHTML = UI.empty('fa-user-group', 'Qui non c’è nessuno', 'Prova con un altro nome oppure registra un nuovo iscritto.');
+
+      const clubs = Object.fromEntries(store.getClubs().map(c => [c.id, c]));
+      const info = UI.pageSlice(list, pg, 24);
+      $id('members-pager').innerHTML = UI.pager(info, 'iscritti');
+      $id('members-grid').innerHTML = info.items.map(m => {
+        const open = loans.filter(l => l.iscrittoId === m.id && !l.dataRestituzione), n = open.length;
+        const cats = open.map(l => (books.get(l.libroId) || {}).catalogo || (l.snap || {}).catalogo).filter(Boolean);
+        return `
+        <article class="person">
+          <div class="person-top">
+            ${UI.avatar(m)}
+            <div style="min-width:0">
+              <h3>${esc(m.nome)} ${esc(m.cognome)}</h3>
+              ${UI.clubTag(clubs[m.clubId], true)}
+            </div>
+          </div>
+          <div class="contact">
+            ${m.email ? `<a href="mailto:${encodeURIComponent(m.email)}"><i class="fa-regular fa-envelope"></i>${esc(m.email)}</a>` : ''}
+            ${store.ageOf(m.dataNascita) != null ? `<span><i class="fa-solid fa-cake-candles"></i>${store.ageOf(m.dataNascita)} anni${clubs[m.clubId] && !store.ageFits(clubs[m.clubId], store.ageOf(m.dataNascita)) ? ' <span class="tag warn">fuori fascia</span>' : ''}</span>` : ''}
+            ${m.telefono ? `<a href="tel:${encodeURIComponent((m.telefono || '').replace(/\s/g, ''))}"><i class="fa-solid fa-phone"></i>${esc(m.telefono)}</a>` : ''}
+            ${!m.email && !m.telefono ? '<span class="contact-missing"><i class="fa-regular fa-bell-slash"></i>Nessun contatto: aggiungilo per poter inviare i solleciti</span>' : ''}
+          </div>
+          <div class="person-foot">
+            <span class="reading">${n === 0 ? 'Nessun libro in lettura' : n === 1 ? '1 libro in lettura' : `${n} libri in lettura`}${cats.length ? ` <span class="reading-cats">${cats.map(c => UI.catTag(c)).join('')}</span>` : ''}</span>
+            <span class="actions">
+              <button class="icon-btn" data-edit="${esc(m.id)}" aria-label="Modifica ${esc(m.nome)} ${esc(m.cognome)}"><i class="fa-solid fa-pen"></i></button>
+              <button class="icon-btn danger" data-del="${esc(m.id)}" aria-label="Elimina ${esc(m.nome)} ${esc(m.cognome)}"><i class="fa-solid fa-trash"></i></button>
+            </span>
+          </div>
+        </article>`;
+      }).join('');
+      staggerOnce($id('members-grid'));
+    }
+
+    function fillClubs() {
+      const opts = store.getClubsSorted().map(c => `<option value="${esc(c.id)}">${esc(c.nome)} · ${esc(store.clubEta(c))}</option>`).join('');
+      $id('m-club').innerHTML = '<option value="">Nessun club</option>' + opts;
+      const cur = $id('f-club').value;
+      $id('f-club').innerHTML = '<option value="">Tutti i club</option>' + opts + '<option value="none">Senza club</option>';
+      $id('f-club').value = cur;
+    }
+
+    /* Suggerisce il club in base all'età e avvisa se il club scelto è fuori fascia */
+    let clubTouched = false;
+    function ageHint() {
+      const age = store.ageOf($id('m-nascita').value), hint = $id('m-hint');
+      if (age == null) { hint.className = 'hint'; hint.textContent = 'Inserisci la data di nascita e ti suggerisco il club adatto all’età.'; return; }
+      const sug = store.suggestClub(age);
+      if (!clubTouched && sug) $id('m-club').value = sug.id;
+      const cur = store.getClub($id('m-club').value);
+      if (cur && !store.ageFits(cur, age)) { hint.className = 'hint warn'; hint.textContent = `${age} anni: è fuori dalla fascia di “${cur.nome}” (${store.clubEta(cur)}).${sug ? ` Club adatto: ${sug.nome}.` : ''}`; }
+      else { hint.className = 'hint'; hint.textContent = `${age} anni${sug ? ` · club adatto: ${sug.nome} (${store.clubEta(sug)})` : ' · nessun club per questa età'}.`; }
+    }
+
+    function openMember(m) {
+      $id('member-form').reset();
+      $id('m-id').value = m ? m.id : '';
+      $id('member-title').textContent = m ? 'Modifica iscritto' : 'Nuovo iscritto alla Spes-F';
+      $id('m-submit').textContent = m ? 'Salva modifiche' : 'Salva iscritto';
+      clubTouched = !!m;
+      if (m) { $id('m-nome').value = m.nome; $id('m-cognome').value = m.cognome; $id('m-email').value = m.email || ''; $id('m-tel').value = m.telefono || ''; $id('m-nascita').value = m.dataNascita || ''; $id('m-club').value = store.getClub(m.clubId) ? m.clubId : ''; }
+      ageHint();
+      openDlg('member-dialog');
+    }
+
+    onReady(() => {
+      fillClubs();
+      ['f-search', 'f-club'].forEach(id => $id(id).addEventListener('input', () => { pg.page = 1; render(); }));
+      UI.bindPager($id('members-pager'), pg, render);
+      $id('btn-new').addEventListener('click', () => openMember(null));
+      /* Importa un elenco di iscritti: prima mostra cosa verrà aggiunto, poi aggiunge (senza toccare chi c'è già) */
+      $id('btn-import').addEventListener('click', () => { $id('members-file').value = ''; $id('members-file').click(); });
+      $id('members-file').addEventListener('change', async () => {
+        const f = $id('members-file').files[0]; if (!f) return;
+        const text = await f.text(); $id('members-file').value = ''; /* così lo stesso file si può scegliere di nuovo */
+        let pkg; try { pkg = JSON.parse(text); } catch { return toast('Il file non si può leggere: scegli il file .json dell’elenco.', 'err'); }
+        const plan = store.planMembersImport(pkg);
+        if (!plan.ok) return toast(plan.error, 'err');
+        if (!plan.add.length) return toast(plan.dup.length ? `Tutti i ${plan.dup.length} iscritti dell’elenco sono già presenti: non c’è nulla da aggiungere.` : 'L’elenco è vuoto.');
+        const per = {}; plan.add.forEach(m => { const k = m.clubNome || 'Senza club'; per[k] = (per[k] || 0) + 1; });
+        const righe = [
+          `Verranno aggiunti ${plan.add.length} iscritti: ${Object.entries(per).map(([k, n]) => `${k} ${n}`).join(', ')}.`,
+          plan.newClubs.length ? `Nuovi club: ${plan.newClubs.map(c => `${c.nome} (${c.etaMin ?? '?'}–${c.etaMax ?? '?'} anni)`).join(', ')}.` : '',
+          plan.dup.length ? `${plan.dup.length} già presenti verranno saltati: ${plan.dup.slice(0, 5).join(', ')}${plan.dup.length > 5 ? '…' : ''}.` : '',
+          'Chi è già in archivio non viene modificato. Telefono ed email si possono aggiungere dopo, dalla scheda di ciascuno.'
+        ];
+        if (!(await UI.confirm(righe.join('\n'), { title: 'Importare l’elenco?', ok: `Aggiungi ${plan.add.length} iscritti` }))) return;
+        const r = store.applyMembersImport(plan);
+        if (!r.ok) return toast(r.error, 'err');
+        fillClubs(); pg.page = 1; render(); updateBadge();
+        toast(`${r.added} iscritti aggiunti${r.clubs ? ` e ${r.clubs} nuovi club` : ''}`);
+      });
+      $id('m-nascita').addEventListener('input', ageHint);
+      $id('m-club').addEventListener('change', () => { clubTouched = true; ageHint(); });
+
+      $id('members-grid').addEventListener('click', async (e) => {
+        const ed = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
+        if (ed) openMember(store.getMembers().find(m => m.id === ed.dataset.edit));
+        if (del) {
+          const m = store.getMembers().find(x => x.id === del.dataset.del);
+          if (!(await UI.confirm('La scheda verrà rimossa dall’anagrafica. I prestiti già chiusi restano nello storico e nel riepilogo.', { title: `Eliminare ${m.nome} ${m.cognome}?`, ok: 'Elimina', danger: true }))) return;
+          const r = store.deleteMember(m.id);
+          r.ok ? toast('Iscritto eliminato') : toast(r.error, 'err');
+          render();
+        }
+      });
+
+      $id('member-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = { nome: $id('m-nome').value.trim(), cognome: $id('m-cognome').value.trim(), email: $id('m-email').value.trim(), telefono: $id('m-tel').value.trim(), dataNascita: $id('m-nascita').value, clubId: $id('m-club').value || null };
+        const id = $id('m-id').value;
+        const r = id ? store.updateMember(id, data) : store.addMember(data);
+        if (!r.ok) return toast(r.error, 'err');
+        const who = id ? store.getMembers().find(x => x.id === id) : r.member;
+        toast(id ? `Scheda aggiornata: ${who.nome} ${who.cognome}` : `Iscrizione registrata: ${who.nome} ${who.cognome}`, 'ok',
+          id ? {} : { action: { label: 'Registra un prestito', run: () => { location.href = `prestiti.html?action=new&iscritto=${encodeURIComponent(who.id)}`; } } });
+        closeDlg('member-dialog'); render();
+      });
+
+      const club = new URLSearchParams(location.search).get('club');
+      const q0 = new URLSearchParams(location.search).get('q');
+      if (q0) $id('f-search').value = q0;
+      if (club) $id('f-club').value = club;
+      render();
+      if (new URLSearchParams(location.search).get('action') === 'new') openMember(null);
+    });
+  </script>
+</body>
+</html>

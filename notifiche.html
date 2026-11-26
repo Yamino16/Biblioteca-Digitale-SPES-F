@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<!-- Biblioteca Spes-F · Fondazione Grimaldi
+     © 2026 Angelo Alaia – Tutti i diritti riservati. Ideazione e sviluppo: Angelo Alaia. -->
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <script src="tema.js"></script>
+  <script>/* passaggi animati tra pagine: un passaggio interrotto non è un errore */addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/Transition was aborted|ViewTransition/i.test(String(r.message||r)))e.preventDefault()});['pagereveal','pageswap'].forEach(function(v){addEventListener(v,function(e){var t=e.viewTransition;if(!t)return;[t.ready,t.finished,t.updateCallbackDone].forEach(function(x){x&&x.catch(function(){})});if(v==='pageswap'&&window.__noVT)t.skipTransition();if(v==='pagereveal')document.documentElement.classList.add('vt-nav')})})</script>
+  <script type="speculationrules">{"prerender":[{"source":"document","where":{"and":[{"href_matches":"/*.html"},{"not":{"href_matches":"/login.html*"}},{"not":{"selector_matches":"[target=_blank]"}}]},"eagerness":"moderate"}]}</script>
+  <meta name="author" content="Angelo Alaia">
+  <meta name="copyright" content="© 2026 Angelo Alaia – Tutti i diritti riservati">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Solleciti | Biblioteca Spes-F</title>
+  <link rel="icon" href="icona-64.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icona-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Spes-F">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="caratteri.css">
+  <link rel="stylesheet" href="icone.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-header" class="topbar"></header>
+      <main class="content">
+
+        <div class="page-head">
+          <div>
+            <div class="title-row"><span class="page-ic c-red"><i class="fa-solid fa-bell"></i></span><h1>Solleciti</h1></div>
+            <p>Invia un promemoria cordiale con un clic, via email o WhatsApp. Il testo è già pronto.</p>
+          </div>
+        </div>
+
+        <div class="info">
+          <i class="fa-solid fa-circle-info"></i>
+          <p>I messaggi indicano il titolo del libro, la scadenza e gli orari della sede di <b><span id="info-sede"></span></b>. Si aprono nella tua app di posta o in WhatsApp: non serve alcun servizio SMS a pagamento.</p>
+        </div>
+
+        <div class="toolbar"><nav class="seg" aria-label="Filtra i solleciti" id="filters">
+          <button data-f="tutti" class="active">Tutti</button>
+          <button data-f="ritardi">In ritardo <span class="n hidden" id="late-n">0</span></button>
+          <button data-f="scadenza">In scadenza</button>
+        </nav>
+          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input class="input" id="f-search" type="search" placeholder="Cerca un iscritto, un libro o un n. catalogo" aria-label="Cerca tra i solleciti"></div>
+        </div>
+
+        <div class="stack" id="notifications-list"></div>
+
+      </main>
+    </div>
+  </div>
+  <div class="scrim" id="scrim"></div>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-app-compat.js"></script>
+  <script src="firebase-auth-compat.js"></script>
+  <script src="firebase-firestore-compat.js"></script>
+  <script src="cloud.js"></script>
+  <script src="state.js"></script>
+  <script src="app.js"></script>
+  <script>
+    let filter = 'tutti';
+
+    function messages(l) {
+      const nome = `${l.socio.nome} ${l.socio.cognome}`.trim();
+      const stato = l.computedStatus === 'In ritardo'
+        ? `risulta scaduto da ${giorni(l.daysDiff)} (data prevista: ${D.fmtLong(l.dataScadenza)})`
+        : l.daysLeft === 0 ? 'scade oggi' : `scade il ${D.fmtLong(l.dataScadenza)}`;
+
+      const subject = `Biblioteca Spes-F – Promemoria riconsegna: “${l.libro.titolo}”`;
+      const email = `Gentile ${nome},
+
+ti scriviamo dalla Biblioteca Spes-F della ${FG.nome} (${FG.sede}).
+
+Ti ricordiamo con cordialità che il prestito del volume
+“${l.libro.titolo}” (n. di catalogo ${l.libro.catalogo || l.libro.id})
+${stato}.
+
+Puoi riportarlo presso la nostra sede in ${FG.indirizzo}, negli orari di segreteria: ${FG.orari}.
+
+Se hai bisogno di più tempo per completare la lettura, rispondi pure a questa email e rinnoveremo il prestito.
+
+Un cordiale saluto,
+${FG.nome} Ente Filantropico
+Segreteria bibliotecaria
+Tel. ${FG.telefono}`;
+
+      const wa = `Gentile ${l.socio.nome}, ti ricordiamo con cordialità dalla Biblioteca Spes-F della ${FG.nome} che il libro “${l.libro.titolo}” ${l.computedStatus === 'In ritardo' ? `era da riconsegnare il ${D.fmtLong(l.dataScadenza)}` : `è da riconsegnare entro il ${D.fmtLong(l.dataScadenza)}`}. Puoi riportarlo in ${FG.indirizzo} (${FG.orari}). Se ti serve più tempo, scrivici e rinnoviamo il prestito. Grazie!`;
+      return { subject, email, wa };
+    }
+
+    function render() {
+      let loans = store.getCalculatedLoans().filter(l => !l.dataRestituzione).sort((a, b) => a.daysLeft - b.daysLeft);
+      const late = loans.filter(l => l.computedStatus === 'In ritardo').length;
+      $('#late-n').textContent = late; $('#late-n').classList.toggle('hidden', late === 0);
+      if (filter === 'ritardi') loans = loans.filter(l => l.computedStatus === 'In ritardo');
+      if (filter === 'scadenza') loans = loans.filter(l => l.computedStatus === 'In scadenza');
+
+      const q = $('#f-search').value;
+      if (q) loans = loans.filter(l => (store.matchCatalog(l.libro, q) || matches(q, l.socio.nome, l.socio.cognome, store.clubName(l.socio.clubId), l.libro.titolo, l.libro.autore, l.libro.catalogo || '')));
+      const box = $('#notifications-list');
+      if (!loans.length) { box.innerHTML = `<div class="panel">${UI.empty('fa-circle-check', 'Nessuno da rincorrere', 'Tutti i libri sono nei tempi. I prestiti in ritardo o in scadenza compariranno qui.')}</div>`; return; }
+
+      box.innerHTML = loans.map(l => {
+        const m = messages(l);
+        const phone = store.normalizePhone(l.socio.telefono);
+        const mailHref = l.socio.email ? `mailto:${encodeURIComponent(l.socio.email)}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.email)}` : '';
+        const waHref = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(m.wa)}` : '';
+        const cls = l.computedStatus === 'In ritardo' ? 'late' : l.computedStatus === 'In scadenza' ? 'soon' : '';
+        return `
+        <article class="notice ${cls}">
+          <div class="notice-who">
+            ${UI.avatar(l.socio)}
+            <div style="min-width:0">
+              <div class="cell-title">${esc(l.socio.nome)} ${esc(l.socio.cognome)} <span class="cell-sub">· ${esc(store.clubName(l.socio.clubId))}</span></div>
+              <div class="cell-sub">${UI.catTag(l.libro.catalogo)} “${esc(l.libro.titolo)}”${l.libro.autore ? ', ' + esc(l.libro.autore) : ''}</div>
+              <div style="margin-top:8px">${UI.statusTag(l)}</div>
+            </div>
+          </div>
+          <div class="notice-btns">
+            ${!mailHref && !waHref ? `<a class="btn btn-sm" href="iscritti.html?q=${encodeURIComponent(l.socio.cognome || '')}"><i class="fa-solid fa-user-pen"></i> Aggiungi un contatto</a>` : ''}
+            <a class="btn btn-sm" ${mailHref ? `href="${mailHref}"` : 'aria-disabled="true" title="Email non registrata"'}><i class="fa-regular fa-envelope"></i> Email</a>
+            <a class="btn btn-sm btn-wa" ${waHref ? `href="${waHref}" target="_blank" rel="noopener noreferrer"` : 'aria-disabled="true" title="Telefono non registrato"'}><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+            <button class="btn btn-sm" data-renew="${esc(l.id)}">Rinnova</button>
+          </div>
+        </article>`;
+      }).join('');
+      staggerOnce(box);
+    }
+
+    onReady(() => {
+      $('#info-sede').textContent = FG.sede;
+      $('#filters').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-f]'); if (!b) return;
+        filter = b.dataset.f;
+        $$('#filters button').forEach(x => x.classList.toggle('active', x === b));
+        render();
+      });
+      $('#f-search').addEventListener('input', render);
+      bindLoanActions(render);
+      render();
+    });
+  </script>
+</body>
+</html>

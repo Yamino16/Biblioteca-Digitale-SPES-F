@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<!-- Biblioteca Spes-F · Fondazione Grimaldi
+     © 2026 Angelo Alaia – Tutti i diritti riservati. Ideazione e sviluppo: Angelo Alaia. -->
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <script src="tema.js"></script>
+  <script>/* passaggi animati tra pagine: un passaggio interrotto non è un errore */addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/Transition was aborted|ViewTransition/i.test(String(r.message||r)))e.preventDefault()});['pagereveal','pageswap'].forEach(function(v){addEventListener(v,function(e){var t=e.viewTransition;if(!t)return;[t.ready,t.finished,t.updateCallbackDone].forEach(function(x){x&&x.catch(function(){})});if(v==='pageswap'&&window.__noVT)t.skipTransition();if(v==='pagereveal')document.documentElement.classList.add('vt-nav')})})</script>
+  <script type="speculationrules">{"prerender":[{"source":"document","where":{"and":[{"href_matches":"/*.html"},{"not":{"href_matches":"/login.html*"}},{"not":{"selector_matches":"[target=_blank]"}}]},"eagerness":"moderate"}]}</script>
+  <meta name="author" content="Angelo Alaia">
+  <meta name="copyright" content="© 2026 Angelo Alaia – Tutti i diritti riservati">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Catalogo | Biblioteca Spes-F</title>
+  <link rel="icon" href="icona-64.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icona-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Spes-F">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="caratteri.css">
+  <link rel="stylesheet" href="icone.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-header" class="topbar"></header>
+      <main class="content">
+
+        <div class="page-head">
+          <div>
+            <div class="title-row"><span class="page-ic c-violet"><i class="fa-solid fa-book-open"></i></span><h1>Catalogo</h1></div>
+            <p>Tutti i titoli della biblioteca e la loro disponibilità. Le copie dello stesso libro stanno insieme: ognuna ha il suo numero di catalogo.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn" id="btn-labels" title="Stampa le etichette con QR dei volumi mostrati"><i class="fa-solid fa-qrcode"></i> Etichette</button>
+            <button class="btn" id="btn-genres"><i class="fa-solid fa-tags"></i> Generi</button>
+            <button class="btn" id="btn-export" title="Scarica il catalogo in Excel: un foglio con i titoli e uno con tutte le copie"><i class="fa-solid fa-file-excel"></i> Esporta</button>
+            <button class="btn btn-primary" id="btn-new"><i class="fa-solid fa-plus"></i> Aggiungi un volume</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input class="input" id="f-search" type="search" placeholder="Titolo, autore, ISBN o n. catalogo (es. C-0012)" aria-label="Cerca nel catalogo">
+          </div>
+          <button class="btn btn-scan" id="btn-scan-search" title="Scansiona il codice a barre ISBN o il QR dell’etichetta"><i class="fa-solid fa-barcode"></i><span>Scansiona</span></button>
+          <input type="hidden" id="f-genre" value="">
+          <select class="input" id="f-club" aria-label="Club consigliato"><option value="">Tutti i club</option></select>
+          <select class="input" id="f-status" aria-label="Stato">
+            <option value="">Tutti gli stati</option>
+            <option value="Disponibile">Disponibili</option>
+            <option value="In Prestito">In prestito</option>
+          </select>
+        </div>
+        <div class="genre-chips" id="genre-chips" role="group" aria-label="Filtra per genere"></div>
+        <p class="count-line" id="count-line" aria-live="polite"></p>
+        <div class="reclass-note hidden" id="reclass-note" role="status">
+          <span class="bn-ic" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+          <p id="reclass-text"></p>
+          <button class="btn btn-sm" id="reclass-open">Migliora la classificazione</button>
+        </div>
+
+        <div class="books" id="books-grid"></div>
+        <div id="books-pager"></div>
+        <div id="books-empty" class="panel hidden"></div>
+
+      </main>
+    </div>
+  </div>
+  <div class="scrim" id="scrim"></div>
+
+  <dialog class="modal wide" id="book-dialog" aria-labelledby="book-dialog-title">
+    <div class="modal-h">
+      <h2 id="book-dialog-title">Nuovo volume</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="book-form" class="modal-b" autocomplete="off">
+      <input type="hidden" id="book-id">
+      <div class="cat-field">
+        <span class="cat-field-ic" aria-hidden="true"><i class="fa-solid fa-hashtag"></i></span>
+        <div class="cat-field-t">
+          <span class="cat-field-l" id="book-cat-l">Numero di catalogo</span>
+          <output class="mono" id="book-cat" aria-labelledby="book-cat-l"></output>
+          <small id="book-cat-hint"></small>
+        </div>
+        <div class="qty" id="qty-box">
+          <label for="book-qty">Copie da aggiungere</label>
+          <div class="stepper">
+            <button type="button" class="icon-btn" data-step="-1" aria-label="Una copia in meno"><i class="fa-solid fa-minus"></i></button>
+            <input class="input mono" id="book-qty" type="number" min="1" max="50" step="1" value="1" inputmode="numeric" aria-describedby="book-cat-hint">
+            <button type="button" class="icon-btn" data-step="1" aria-label="Una copia in più"><i class="fa-solid fa-plus"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="isbn-box">
+        <label class="muted" for="book-isbn" style="font-size:.8rem;font-weight:600">ISBN: scansiona il codice a barre o scrivilo, e i dati del libro si compilano da soli</label>
+        <div class="row">
+          <input class="input" id="book-isbn" placeholder="es. 9788804668237" inputmode="numeric">
+          <button type="button" class="btn btn-scan" id="btn-scan"><i class="fa-solid fa-barcode"></i> Scansiona</button>
+          <button type="button" class="btn" id="btn-isbn"><i class="fa-solid fa-wand-magic-sparkles"></i> Compila</button>
+        </div>
+        <p class="status-line" id="isbn-status" aria-live="polite"></p>
+        <div class="dup-note hidden" id="dup-note"></div>
+        <div class="found hidden" id="cover-box">
+          <img id="cover-img" alt="Copertina" referrerpolicy="no-referrer">
+          <div><b style="font-size:.88rem">Copertina trovata</b><div class="actions-inline"><button type="button" class="linkish" id="cover-remove">Non usarla</button></div></div>
+        </div>
+        <input type="hidden" id="book-cover">
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="book-title">Titolo *</label><input class="input" id="book-title" required></div>
+        <div class="field"><label for="book-author">Autore *</label><input class="input" id="book-author" required></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="book-genre">Genere * <button type="button" class="linkish" id="book-genres-manage" style="margin-left:6px">Gestisci i generi</button></label><select class="input" id="book-genre" required></select><p class="genre-hint hidden" id="genre-hint" aria-live="polite"></p></div>
+        <div class="field"><label for="book-shelf">Scaffale</label><input class="input" id="book-shelf" placeholder="es. A1"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="book-publisher">Editore</label><input class="input" id="book-publisher"></div>
+        <div class="field"><label for="book-year">Anno</label><input class="input" id="book-year" inputmode="numeric" maxlength="4" placeholder="es. 2019"></div>
+      </div>
+      <fieldset class="field" style="border:0;padding:0;margin:0">
+        <legend style="font-size:.8rem;font-weight:600;color:var(--mute);margin-bottom:8px">Club a cui è consigliato (puoi sceglierne più di uno)</legend>
+        <div class="picks" id="book-clubs"></div>
+        <p class="hint" id="book-clubs-hint">Se non ne scegli nessuno, il libro resta nel catalogo generale.</p>
+      </fieldset>
+    </form>
+    <div class="modal-f">
+      <button type="button" class="btn" data-close>Annulla</button>
+      <button type="submit" form="book-form" class="btn btn-primary" id="book-submit">Salva volume</button>
+      <button type="submit" form="book-form" class="btn" id="book-submit-next" title="Salva e prepara subito la scheda per il libro successivo (genere, scaffale e club restano)"><i class="fa-solid fa-layer-group"></i> Salva e aggiungi un altro</button>
+    </div>
+  </dialog>
+
+  <dialog class="modal wide" id="view-dialog" aria-labelledby="view-title">
+    <div class="modal-h">
+      <div class="view-h"><span class="cat-tag mono big" id="view-cat"></span><h2 id="view-title">Scheda del volume</h2></div>
+      <button class="icon-btn" data-close aria-label="Chiudi"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-b" id="view-body"></div>
+    <div class="modal-f">
+      <button type="button" class="btn" id="view-label"><i class="fa-solid fa-print"></i> Stampa etichetta</button>
+      <button type="button" class="btn" id="view-copy" title="Nuova copia fisica dello stesso libro, con un proprio numero di catalogo"><i class="fa-solid fa-clone"></i> Aggiungi copia</button>
+      <button type="button" class="btn" id="view-edit"><i class="fa-solid fa-pen"></i> Modifica</button>
+      <a class="btn btn-primary" id="view-loan" href="prestiti.html?action=new"><i class="fa-solid fa-right-left"></i> Presta questa copia</a>
+    </div>
+  </dialog>
+
+  <section class="print-only labels" id="labels" aria-hidden="true"></section>
+
+  <dialog class="modal" id="labels-dialog" aria-labelledby="labels-title">
+    <div class="modal-h">
+      <h2 id="labels-title">Stampa etichette</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-b">
+      <div class="field"><label>Formato del foglio adesivo A4</label><div class="lb-formats" id="lb-formats" role="radiogroup" aria-label="Formato delle etichette"></div></div>
+      <div class="field"><label for="lb-start">Inizia dall’etichetta n.</label><input type="number" class="input" id="lb-start" min="1" value="1" style="max-width:120px"><p class="hint">Utile per riusare un foglio già in parte utilizzato: le posizioni precedenti restano vuote.</p></div>
+      <p class="lb-summary" id="lb-summary" aria-live="polite"></p>
+    </div>
+    <div class="modal-f">
+      <button type="button" class="btn" data-close>Annulla</button>
+      <button type="button" class="btn btn-primary" id="lb-print"><i class="fa-solid fa-print"></i> Stampa</button>
+    </div>
+  </dialog>
+
+  <dialog class="modal wide" id="reclass-dialog" aria-labelledby="reclass-title">
+    <div class="modal-h">
+      <h2 id="reclass-title">Migliora la classificazione</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-b">
+      <p class="hint" id="rc-intro"></p>
+      <label class="check switch"><input type="checkbox" role="switch" id="rc-all"><span class="sw-track" aria-hidden="true"></span><span>Controlla anche i libri che hanno già un genere specifico</span></label>
+      <div class="rc-progress hidden" id="rc-progress"><div class="rc-bar"><i id="rc-bar"></i></div><span id="rc-status"></span></div>
+      <div class="table-wrap hidden" id="rc-wrap">
+        <table class="table table-compact table-cards">
+          <thead><tr><th style="width:36px"><input type="checkbox" id="rc-check-all" aria-label="Seleziona tutti" checked></th><th>Volume</th><th>Genere attuale</th><th>Genere proposto</th></tr></thead>
+          <tbody id="rc-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button type="button" class="btn" data-close>Chiudi</button>
+      <button type="button" class="btn" id="rc-start"><i class="fa-solid fa-magnifying-glass"></i> Analizza</button>
+      <button type="button" class="btn btn-primary hidden" id="rc-apply"><i class="fa-solid fa-check"></i> Applica</button>
+    </div>
+  </dialog>
+
+  <dialog class="modal wide" id="genres-dialog" aria-labelledby="genres-title">
+    <div class="modal-h">
+      <h2 id="genres-title">Generi del catalogo</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-b">
+      <p class="hint">I generi creati qui compaiono nell’elenco quando aggiungi un volume. Se rinomini un genere, si aggiornano anche tutti i volumi che lo usano.</p>
+      <form class="genre-add" id="genre-add" autocomplete="off">
+        <input class="input" id="g-new" maxlength="40" placeholder="Nuovo genere, es. Narrativa" aria-label="Nome del nuovo genere">
+        <div class="swatches small" id="g-new-colors" role="radiogroup" aria-label="Colore del nuovo genere"></div>
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-plus"></i> Aggiungi</button>
+      </form>
+      <div class="genre-similar hidden" id="genre-similar" role="status"></div>
+      <ul class="genre-list" id="genre-list-ui"></ul>
+    </div>
+    <div class="modal-f"><button type="button" class="btn" data-close>Fatto</button></div>
+  </dialog>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-app-compat.js"></script>
+  <script src="firebase-auth-compat.js"></script>
+  <script src="firebase-firestore-compat.js"></script>
+  <script src="cloud.js"></script>
+  <script src="state.js"></script>
+  <script src="app.js"></script>
+  <script src="scanner.js"></script>
+  <script src="export.js"></script>
+  <script>
+    const $id = (id) => document.getElementById(id);
+
+    const pg = { page: 1 }, PAGE = 24;
+    /* Volumi che corrispondono a ricerca e filtri (usata anche per stampare le etichette) */
+    function filtered() {
+      const raw = $id('f-search').value.trim(), q = raw.toLowerCase();
+      const qIsbn = ISBN.clean(q);
+      const g = $id('f-genre').value, cl = $id('f-club').value, s = $id('f-status').value;
+      return store.getBooks().filter(b =>
+        (!q || store.matchCatalog(b, raw) || [b.titolo, b.autore, b.editore].some(v => (v || '').toLowerCase().includes(q)) || (qIsbn.length >= 4 && ISBN.clean(b.isbn).includes(qIsbn)) || (ISBN.normalize(q) && ISBN.same(b.isbn, q))) &&
+        (!g || b.genere === g) && (!cl || (cl === 'none' ? !(b.clubIds || []).length : (b.clubIds || []).includes(cl))) && (!s || b.stato === s))
+        .sort((a, b) => BiblioStore.catNumber(a.catalogo) - BiblioStore.catNumber(b.catalogo));
+    }
+    /* Titoli da mostrare: quelli con almeno una copia che corrisponde a ricerca e filtri */
+    const openKeys = new Set(); let hitCopy = null, keyOf = {};
+    function titleList() {
+      const all = store.getBooks(), match = filtered(), ids = new Set(match.map(b => b.id));
+      return { all, match, ids, titles: store.getTitles(all).filter(t => t.copies.some(c => ids.has(c.id))) };
+    }
+    const plural = (n, uno, molti) => `${n} ${n === 1 ? uno : molti}`;
+    const copiesLabel = (t) => `${plural(t.total, 'copia', 'copie')} · ${plural(t.available, 'disponibile', 'disponibili')}`;
+    function render() {
+      const { all, match, ids, titles } = titleList();
+      const raw = $id('f-search').value.trim();
+      /* cercando un numero di catalogo esatto si apre il gruppo e si evidenzia quella copia */
+      const exact = BiblioStore.isCatCode(raw) ? store.findByCatalog(raw) : null;
+      if (exact) { openKeys.add(BiblioStore.groupKey(exact)); hitCopy = exact.id; }
+      const info = UI.pageSlice(titles, pg, PAGE);
+
+      renderGenreChips();
+      const totalTitles = store.getTitles(all).length;
+      $id('count-line').innerHTML = all.length ? `<b>${plural(titles.length, 'titolo', 'titoli')}</b> · ${plural(match.length, 'copia', 'copie')}${match.length !== all.length ? ` <span class="muted">su ${plural(totalTitles, 'titolo', 'titoli')} e ${plural(all.length, 'copia', 'copie')}</span>` : ''}` : '';
+      const empty = $id('books-empty');
+      empty.classList.toggle('hidden', titles.length > 0);
+      empty.innerHTML = all.length ? UI.empty('fa-book-open', 'Nessun libro risponde all’appello', 'Prova con un’altra parola o togli qualche filtro: magari è solo finito sullo scaffale sbagliato.')
+        : UI.empty('fa-book-open', 'Il catalogo è pronto', 'Aggiungi il primo volume: riceverà il numero C-0001. Puoi scansionare il codice a barre per compilare i dati da solo.') + '<div class="empty-cta"><button class="btn btn-primary" data-first-book><i class="fa-solid fa-plus"></i> Aggiungi il primo volume</button></div>';
+
+      const clubs = Object.fromEntries(store.getClubs().map(c => [c.id, c]));
+      const lent = new Map(store.getCalculatedLoans().filter(l => !l.dataRestituzione).map(l => [l.libroId, l]));
+      const hl = (t) => UI.mark(t, raw);
+      keyOf = {}; titles.forEach(t => t.copies.forEach(c => { keyOf[c.id] = t.key; }));
+      $id('books-pager').innerHTML = UI.pager(info, 'titoli');
+      renderReclassNote(all);
+      $id('books-grid').innerHTML = info.items.map(t => {
+        const b = t.first, multi = t.total > 1, open = multi && openKeys.has(t.key);
+        const out = t.available === 0;
+        const col = genreColor(b.genere);
+        const act = multi ? `data-expand="${esc(t.key)}" aria-expanded="${open}" aria-label="${esc(b.titolo)}: mostra le ${t.total} copie"` : `data-view="${esc(b.id)}" aria-label="Apri la scheda di ${esc(b.titolo)}"`;
+        const stack = multi ? `<span class="copies-n" aria-hidden="true"><i class="fa-solid fa-layer-group"></i> ${t.total}</span>` : '';
+        const rows = !multi ? '' : `
+          <ul class="copies" aria-label="Copie di ${esc(b.titolo)}">
+            <li class="copies-h"><span><i class="fa-solid fa-layer-group"></i> Le ${t.total} copie di questo titolo</span><button type="button" class="linkish" data-addcopy="${esc(b.id)}"><i class="fa-solid fa-plus"></i> Aggiungi copia</button></li>
+            ${t.copies.map(c => { const cOut = c.stato !== 'Disponibile', l = lent.get(c.id); return `
+            <li class="copy-row ${cOut ? 'out' : ''} ${ids.has(c.id) ? '' : 'dim'} ${hitCopy === c.id ? 'hit' : ''}" data-copy="${esc(c.id)}">
+              <button type="button" class="cat-link" data-view="${esc(c.id)}" title="Apri la scheda di questa copia">${UI.catTag(c.catalogo)}</button>
+              <span class="copy-info">
+                <span class="copy-shelf"><i class="fa-solid fa-location-dot"></i> ${esc(c.scaffale || 'Archivio')}</span>
+                <span class="tag ${cOut ? (l && l.computedStatus === 'In ritardo' ? 'late' : 'warn') : 'ok'}">${cOut ? 'In prestito' : 'Disponibile'}</span>
+                ${l ? `<small class="copy-who">${esc(l.socio.nome)} ${esc(l.socio.cognome)} · ${l.computedStatus === 'In ritardo' ? `in ritardo di ${giorni(l.daysDiff)}` : `fino al ${D.fmt(l.dataScadenza)}`}</small>` : ''}
+              </span>
+              <span class="actions">
+                ${cOut ? '' : `<a class="icon-btn go" href="prestiti.html?action=new&libro=${encodeURIComponent(c.id)}" title="Presta questa copia" aria-label="Presta la copia ${esc(c.catalogo)}"><i class="fa-solid fa-right-left"></i></a>`}
+                <button class="icon-btn" data-edit="${esc(c.id)}" aria-label="Modifica la copia ${esc(c.catalogo)}" title="Modifica"><i class="fa-solid fa-pen"></i></button>
+                <button class="icon-btn danger" data-del="${esc(c.id)}" aria-label="Elimina la copia ${esc(c.catalogo)}" title="${cOut ? 'In prestito: registra prima la restituzione' : 'Elimina questa copia'}" ${cOut ? 'aria-disabled="true"' : ''}><i class="fa-solid fa-trash"></i></button>
+              </span>
+            </li>`; }).join('')}
+          </ul>`;
+        return `
+        <article class="book ${out ? 'out' : ''} ${multi ? 'multi' : ''} ${open ? 'open' : ''}" data-id="${esc(b.id)}" data-key="${esc(t.key)}">
+          <div class="book-main">
+          ${/^https:\/\/[^\s"'<>]+$/i.test(b.copertina || '') ? `
+          <div class="cover has-img" style="--c:${col}" ${act} role="button" tabindex="0">
+            <img class="cover-img" src="${esc(b.copertina)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+            <span class="shelf mono">${esc(b.scaffale || 'Archivio')}</span>
+            <span class="cover-cat">${UI.catTag(b.catalogo)}${stack}</span>
+            <h3 class="sr-only">${esc(b.titolo)}</h3>
+          </div>
+          <div class="book-caption"><div class="cell-title">${hl(b.titolo)}</div><div class="cell-sub">${hl(b.autore)}</div></div>` : `
+          <div class="cover" style="--c:${col}" ${act} role="button" tabindex="0">
+            <span class="shelf mono">${esc(b.scaffale || 'Archivio')}</span>
+            <span class="cover-cat">${UI.catTag(b.catalogo)}${stack}</span>
+            <h3>${hl(b.titolo)}</h3>
+            <span class="author">${hl(b.autore)}</span>
+          </div>`}
+          <div class="book-meta">
+            <span class="book-meta-l">${multi
+              ? `<button type="button" class="tag copies-tag ${out ? 'warn' : 'ok'}" data-expand="${esc(t.key)}" aria-expanded="${open}" title="Mostra o nascondi le singole copie"><i class="fa-solid fa-layer-group"></i> ${copiesLabel(t)} <i class="fa-solid fa-chevron-down chev"></i></button>`
+              : `<span class="tag ${out ? 'warn' : 'ok'}">${out ? 'In prestito' : 'Disponibile'}</span>`}</span>
+            ${multi ? '' : `<span class="actions">
+              <button class="icon-btn" data-view="${esc(b.id)}" aria-label="Scheda di ${esc(b.titolo)}" title="Scheda e storico"><i class="fa-solid fa-id-card"></i></button>
+              <button class="icon-btn" data-edit="${esc(b.id)}" aria-label="Modifica ${esc(b.titolo)}" title="Modifica"><i class="fa-solid fa-pen"></i></button>
+              <button class="icon-btn danger" data-del="${esc(b.id)}" aria-label="Elimina ${esc(b.titolo)}" title="${out ? 'In prestito: registra prima la restituzione' : 'Elimina'}" ${out ? 'aria-disabled="true"' : ''}><i class="fa-solid fa-trash"></i></button>
+            </span>`}
+          </div>
+          <div class="chips"><span class="tag plain gtag" style="--cc:${col}"><i class="fa-solid fa-tag"></i> ${esc(b.genere)}</span></div>
+          <div class="chips">${(b.clubIds || []).map(id => clubs[id]).filter(Boolean).map(c => UI.clubTag(c)).join('') || '<small class="muted">Nessun club consigliato</small>'}</div>
+          </div>${rows}
+        </article>`;
+      }).join('');
+      staggerOnce($id('books-grid'));
+    }
+    /* Apre o chiude l'elenco delle copie di un titolo, senza ridisegnare tutta la griglia */
+    function toggleCopies(key, force) {
+      const el = [...$id('books-grid').querySelectorAll('.book.multi')].find(x => x.dataset.key === key);
+      const open = force !== undefined ? force : !openKeys.has(key);
+      open ? openKeys.add(key) : openKeys.delete(key);
+      if (!el) return;
+      el.classList.toggle('open', open);
+      el.querySelectorAll('[data-expand]').forEach(x => x.setAttribute('aria-expanded', open));
+      if (open) { const r = el.getBoundingClientRect(); if (r.bottom > innerHeight || r.top < 70) el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' }); }
+    }
+    /* Va alla pagina del titolo che contiene una copia e la mette in evidenza */
+    function revealCopy(id) {
+      const { titles } = titleList();
+      const i = titles.findIndex(t => t.copies.some(c => c.id === id));
+      if (i < 0) { render(); return; }
+      pg.page = Math.floor(i / PAGE) + 1;
+      if (titles[i].total > 1) { openKeys.add(titles[i].key); hitCopy = id; }
+      render(); flashBook(id);
+    }
+
+    /* Colore della copertina: quello del genere, oppure uno ricavato dal nome per i generi nuovi */
+    function genreColor(g) { return store.genreColor(g); }
+    /* Elenco dei generi nel campo del volume (mantiene la scelta corrente) */
+    function fillBookGenres(keep) {
+      const cur = keep !== undefined ? keep : $id('book-genre').value;
+      const list = store.getGenres();
+      const extra = cur && !list.some(g => g.nome === cur) ? `<option>${esc(cur)}</option>` : '';
+      $id('book-genre').innerHTML = '<option value="">Scegli un genere…</option>' + list.map(g => `<option>${esc(g.nome)}</option>`).join('') + extra;
+      $id('book-genre').value = cur || '';
+    }
+    /* Pillole per filtrare il catalogo per genere */
+    function renderGenreChips() {
+      const titles = store.getTitles(), cur = $id('f-genre').value;
+      const list = store.getGenres().map(g => ({ ...g, n: titles.filter(t => t.copies.some(b => b.genere === g.nome)).length }));
+      if (cur && !list.some(g => g.nome === cur)) $id('f-genre').value = '';
+      $id('genre-chips').innerHTML = `<button class="gchip ${!$id('f-genre').value ? 'active' : ''}" data-g="">Tutti <span>${titles.length}</span></button>` +
+        list.map(g => `<button class="gchip ${g.nome === $id('f-genre').value ? 'active' : ''}" data-g="${esc(g.nome)}" style="--cc:${g.colore}"><i></i>${esc(g.nome)} <span>${g.n}</span></button>`).join('');
+    }
+    function fillFilters() {
+      const keep = (id, html) => { const v = $id(id).value; $id(id).innerHTML = html; $id(id).value = v; };
+      renderGenreChips(); fillBookGenres();
+      keep('f-club', '<option value="">Tutti i club</option>' + store.getClubsSorted().map(c => `<option value="${esc(c.id)}">${esc(c.nome)} · ${esc(store.clubEta(c))}</option>`).join('') + '<option value="none">Senza club</option>');
+    }
+
+    function openBook(book) {
+      $id('book-form').reset();
+      $id('book-id').value = book ? book.id : '';
+      $id('book-dialog-title').textContent = book ? 'Modifica volume' : 'Nuovo volume';
+      $id('book-submit').textContent = book ? 'Salva modifiche' : 'Salva volume';
+      $id('book-submit-next').classList.toggle('hidden', !!book);
+      $id('isbn-status').textContent = ''; $id('isbn-status').className = 'status-line';
+      $id('dup-note').classList.add('hidden'); setCover('');
+      $id('qty-box').classList.toggle('hidden', !!book); $id('book-qty').value = 1;
+      $id('book-cat').textContent = book ? book.catalogo || '—' : store.peekCatalog();
+      lastSubjects = book ? book.soggetti || [] : []; lastDewey = book && book.dewey ? [book.dewey] : []; lastCollana = ''; lastDesc = ''; lastFromIsbn = false; genreByHand = !!book; clearGenreHint();
+      $id('book-cat-hint').textContent = book ? 'Numero fisso della copia: non cambia se modifichi i dati del libro.' : 'Verrà assegnato in automatico al salvataggio. Ogni nuova copia riceve il proprio numero.';
+      if (book) { const n = store.copiesOfBook(book).length; if (n > 1) $id('book-cat-hint').textContent += ` Questo titolo ha ${n} copie: al salvataggio ti chiedo se la modifica vale per tutte.`; }
+      fillBookGenres(book ? book.genere || '' : '');
+      const sel = new Set(book ? book.clubIds || [] : []);
+      const clubs = store.getClubsSorted();
+      $id('book-clubs').innerHTML = clubs.length ? clubs.map(c => `<label class="pick" style="--cc:${c.colore}"><input type="checkbox" value="${esc(c.id)}" ${sel.has(c.id) ? 'checked' : ''}><span>${esc(c.nome)} <small>${esc(store.clubEta(c))}</small></span></label>`).join('')
+        : '<p class="hint">Non ci sono ancora club: puoi crearli nella sezione <a href="club.html" style="text-decoration:underline">Club</a>.</p>';
+      if (book) {
+        $id('book-isbn').value = book.isbn || ''; $id('book-title').value = book.titolo; $id('book-author').value = book.autore;
+        $id('book-genre').value = book.genere || ''; $id('book-shelf').value = book.scaffale || '';
+        $id('book-publisher').value = book.editore || ''; $id('book-year').value = book.anno || ''; setCover(book.copertina || '');
+      }
+      openDlg('book-dialog');
+      if (!book) setTimeout(() => { const a = document.activeElement; if (!(a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName) && $id('book-form').contains(a))) $id('book-isbn').focus(); }, 80); /* non toglie il cursore a chi sta già scrivendo */
+    }
+
+    /* Compila il modulo con i dati di un volume già presente (nuova copia dello stesso libro) */
+    function copyFrom(src) {
+      lastSubjects = src.soggetti || []; lastDewey = src.dewey ? [src.dewey] : []; genreByHand = true; clearGenreHint();
+      $id('book-title').value = src.titolo || ''; $id('book-author').value = src.autore || '';
+      fillBookGenres(src.genere || ''); $id('book-shelf').value = src.scaffale || '';
+      $id('book-publisher').value = src.editore || ''; $id('book-year').value = src.anno || '';
+      setCover(src.copertina || '');
+      document.querySelectorAll('#book-clubs input').forEach(i => { i.checked = (src.clubIds || []).includes(i.value); });
+    }
+    /* Mette in evidenza per un attimo la scheda di un volume (dopo averlo salvato) */
+    function flashBook(id) {
+      const row = $id('books-grid').querySelector(`[data-copy="${CSS.escape(id)}"]`);
+      const el = row && row.closest('.book.open') ? row : (row ? row.closest('.book') : $id('books-grid').querySelector(`[data-id="${CSS.escape(id)}"]`)); if (!el) return;
+      el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+      const r = el.getBoundingClientRect(); if (r.top < 70 || r.bottom > innerHeight) el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+      setTimeout(() => el.classList.remove('flash'), 2200);
+    }
+
+    function setCover(url) {
+      $id('book-cover').value = url || '';
+      $id('cover-box').classList.toggle('hidden', !url);
+      if (url) $id('cover-img').src = url; else $id('cover-img').removeAttribute('src');
+    }
+    const say = (t, c) => { $id('isbn-status').textContent = t; $id('isbn-status').className = `status-line ${c || ''}`; };
+
+    /* ---------- Genere suggerito automaticamente ----------
+       Si propone solo se il genere non è ancora stato scelto a mano; resta sempre modificabile. */
+    let lastSubjects = [], lastDewey = [], lastCollana = '', lastDesc = '', lastFromIsbn = false, genreByHand = false;
+    const genreInfo = (extra = {}) => ({ titolo: $id('book-title').value, autore: $id('book-author').value, editore: $id('book-publisher').value, soggetti: lastSubjects, dewey: lastDewey, collana: lastCollana, ...extra });
+    function clearGenreHint() { $id('genre-hint').classList.add('hidden'); $id('book-genre').classList.remove('suggested'); }
+    /* Il genere viene sempre riempito: uno dei tuoi, oppure un genere nuovo dal nome fisso (creato solo al salvataggio) */
+    function suggestGenre(info) {
+      if (genreByHand && $id('book-genre').value) return null;
+      const s = GenreGuess.classify(info, store.getGenres(), store.getBooks(), $id('book-id').value || null);
+      if (s.varie && $id('book-genre').value) return null; /* nessun indizio: si tiene il genere già scelto (es. "Salva e aggiungi un altro") */
+      fillBookGenres(s.genere); genreByHand = false;
+      const el = $id('book-genre'); el.classList.remove('suggested'); void el.offsetWidth; el.classList.add('suggested');
+      $id('genre-hint').innerHTML = s.varie
+        ? `<i class="fa-solid fa-circle-info"></i><span>Messo in <b>${esc(s.genere)}</b>${s.nuovo ? ' (genere nuovo)' : ''}: ${esc(s.motivo)}.</span>`
+        : `<i class="fa-solid fa-wand-magic-sparkles"></i><span>${s.nuovo ? 'Nuovo genere' : 'Genere'} <b>${esc(s.genere)}</b>${s.nuovo ? ', verrà creato al salvataggio,' : ','} ${esc(s.motivo)}. Puoi cambiarlo.</span>`;
+      $id('genre-hint').className = `genre-hint${s.varie ? ' muted' : ''}`;
+      return s;
+    }
+
+    /* Dopo una scansione o un ISBN scritto: prima si guarda se il libro è già in catalogo, poi si cerca online */
+    let lookupSeq = 0;
+    async function handleISBN(raw, { auto = false } = {}) {
+      const clean = ISBN.clean(raw);
+      if (!clean) { if (!auto) say('Inserisci un ISBN o usa Scansiona.', 'err'); return; }
+      const isbn = ISBN.normalize(clean);
+      if (!isbn) { say('ISBN non valido: controlla le cifre (10 o 13, l’ultima è di controllo).', 'err'); return; }
+      $id('book-isbn').value = isbn;
+      const editing = $id('book-id').value;
+      const copies = store.copiesOf(isbn, editing || null);
+      const note = $id('dup-note');
+      if (copies.length) {
+        const src = copies[0];
+        dupNote(copies, !!editing);
+        if (!editing) { copyFrom(src); say('Dati riusati dalla copia già presente: controlla lo scaffale e salva.', 'ok'); return; }
+      } else note.classList.add('hidden');
+
+      const seq = ++lookupSeq, btn = $id('btn-isbn');
+      btn.disabled = true; say(ISBN.isItalian(isbn) ? 'Cerco il libro nel catalogo SBN, su Google Books e Open Library…' : 'Cerco il libro su Google Books, Open Library e SBN…');
+      try {
+        const r = await ISBN.lookup(isbn);
+        if (seq !== lookupSeq) return;
+        if (!r) { say('Libro non trovato online: compila titolo e autore a mano. L’ISBN resta salvato.', 'err'); return; }
+        const fill = (id, v) => { if (v && (!$id(id).value.trim() || !editing)) $id(id).value = v; };
+        fill('book-title', r.titolo); fill('book-author', r.autore); fill('book-publisher', r.editore); fill('book-year', r.anno);
+        if (r.copertina && (!editing || !$id('book-cover').value)) setCover(r.copertina);
+        lastSubjects = r.soggetti || []; lastDewey = r.dewey || []; lastCollana = r.collana || ''; lastDesc = r.descrizione || ''; lastFromIsbn = !!(lastSubjects.length || lastDewey.length || lastDesc);
+        const g = editing && $id('book-genre').value ? null : suggestGenre(genreInfo({ descrizione: r.descrizione }));
+        say(`Dati trovati (${r.fonte}). ${g ? 'Controllali e scegli i club.' : 'Controllali, poi scegli genere e club.'}`, 'ok');
+        if (!$id('book-genre').value) $id('book-genre').focus();
+      } catch { if (seq === lookupSeq) say('Ricerca non riuscita: controlla la connessione o compila a mano.', 'err'); }
+      finally { if (seq === lookupSeq) btn.disabled = false; }
+    }
+
+    /* Avviso "questo libro c'è già": quante copie, quante libere e che numero avrà la nuova */
+    function dupNote(copies, editing) {
+      const note = $id('dup-note'), n = copies.length, free = copies.filter(c => c.stato === 'Disponibile').length;
+      const codes = copies.slice(0, 6).map(c => esc(c.catalogo || c.id)).join(', ') + (n > 6 ? ` e altre ${n - 6}` : '');
+      note.innerHTML = `<i class="fa-solid fa-clone"></i><span><b>${n === 1 ? 'C’è già 1 copia' : `Ci sono già ${n} copie`}</b> di questo libro in catalogo (${codes}), ${free === 1 ? '1 disponibile' : free + ' disponibili'}.${editing ? '' : ` Salvando aggiungi <b>un’altra copia</b> con il nuovo numero <b class="mono">${esc(store.peekCatalog())}</b>: ho riusato i dati di quelle esistenti. Te ne servono di più? Indica quante in “Copie da aggiungere”.`}</span>`;
+      note.classList.remove('hidden');
+    }
+    /* Numero (o intervallo di numeri) che riceveranno le nuove copie */
+    function qtyValue() { return Math.max(1, Math.min(BiblioStore.MAX_COPIE, parseInt($id('book-qty').value, 10) || 1)); }
+    function showQty() {
+      if ($id('book-id').value) return;
+      const n = qtyValue(), first = BiblioStore.catNumber(store.peekCatalog());
+      $id('book-cat').textContent = n > 1 ? `${BiblioStore.catCode(first)} – ${BiblioStore.catCode(first + n - 1)}` : BiblioStore.catCode(first);
+      $id('book-cat-hint').textContent = n > 1 ? `${n} copie dello stesso libro: ognuna riceve il proprio numero, in fila.` : 'Verrà assegnato in automatico al salvataggio. Ogni nuova copia riceve il proprio numero.';
+      $id('book-submit').textContent = n > 1 ? `Salva ${n} copie` : 'Salva volume';
+    }
+
+    /* Scansiona dalla barra di ricerca: se il libro c'è lo mostra, altrimenti propone di aggiungerlo */
+    async function scanSearch() {
+      const r = await Scanner.scan('Cerca un libro: codice a barre o QR dell’etichetta', { any: true });
+      if (!r) return;
+      if (r.type === 'catalogo') return showByCatalog(r.value);
+      const isbn = r.value;
+      const copies = store.copiesOf(isbn);
+      if (copies.length) {
+        $id('f-search').value = isbn; ['f-genre', 'f-club', 'f-status'].forEach(id => { $id(id).value = ''; });
+        render();
+        const free = copies.filter(b => b.stato === 'Disponibile').length;
+        toast(`${copies[0].titolo}: ${copies.length === 1 ? '1 copia' : copies.length + ' copie'}, ${free === 1 ? '1 disponibile' : free + ' disponibili'}`);
+      } else {
+        toast('Libro non ancora in catalogo: compila la scheda per aggiungerlo');
+        openBook(null); $id('book-isbn').value = isbn; handleISBN(isbn);
+      }
+    }
+
+    /* ---------- Scheda del volume: dati della copia, QR, altre copie e storico dei prestiti ---------- */
+    let viewing = null;
+    const qrText = (code) => /^https?:$/.test(location.protocol) ? new URL('catalogo.html?cat=' + encodeURIComponent(code), location.href).href : 'SPESF:' + code;
+    function showByCatalog(code) {
+      const b = store.findByCatalog(code);
+      if (!b) return toast(`Nessun volume con il numero ${BiblioStore.catCode(BiblioStore.catNumber(code))}.`, 'err');
+      openView(b);
+    }
+    async function openView(b) {
+      viewing = b.id;
+      const clubs = Object.fromEntries(store.getClubs().map(c => [c.id, c]));
+      const loans = store.getCalculatedLoans().filter(l => l.libroId === b.id).sort((x, y) => String(y.dataUscita).localeCompare(String(x.dataUscita)));
+      const group = store.copiesOfBook(b), others = group.filter(o => o.id !== b.id);
+      const groupFree = group.filter(o => o.stato === 'Disponibile').length;
+      const active = loans.find(l => !l.dataRestituzione);
+      const col = store.genreColor(b.genere);
+      const row = (k, v) => v ? `<div><dt>${k}</dt><dd>${v}</dd></div>` : '';
+      $id('view-cat').textContent = b.catalogo || '—';
+      $id('view-title').textContent = b.titolo;
+      $id('view-loan').href = `prestiti.html?action=new&libro=${encodeURIComponent(b.id)}`;
+      $id('view-loan').classList.toggle('hidden', b.stato !== 'Disponibile');
+      $id('view-body').innerHTML = `
+        <div class="view-top">
+          <div class="view-qr" id="view-qr" style="--c:${col}"><span class="skel-qr"></span></div>
+          <div class="view-main">
+            <p class="view-author">${esc(b.autore)}</p>
+            <div class="chips">
+              <span class="tag ${b.stato !== 'Disponibile' ? 'warn' : 'ok'}">${b.stato !== 'Disponibile' ? 'In prestito' : 'Disponibile'}</span>
+              <span class="tag plain gtag" style="--cc:${col}"><i class="fa-solid fa-tag"></i> ${esc(b.genere)}</span>
+              ${group.length > 1 ? `<span class="tag plain"><i class="fa-solid fa-layer-group"></i> ${group.length} copie · ${groupFree === 1 ? '1 disponibile' : groupFree + ' disponibili'}</span>` : ''}
+            </div>
+            ${active ? `<p class="view-now"><i class="fa-solid fa-book-open-reader"></i> In lettura da <b>${esc(active.socio.nome)} ${esc(active.socio.cognome)}</b> · ${UI.statusTag(active)}</p>` : ''}
+          </div>
+        </div>
+        <dl class="kv">
+          ${row('Numero di catalogo', `<b class="mono">${esc(b.catalogo || '—')}</b>`)}
+          ${row('ISBN', b.isbn ? `<span class="mono">${esc(b.isbn)}</span>` : '<span class="muted">Non indicato</span>')}
+          ${row('Scaffale', esc(b.scaffale || 'Archivio'))}
+          ${row('Editore', esc(b.editore || ''))}
+          ${row('Anno', esc(b.anno || ''))}
+          ${row('Codice interno', `<span class="mono muted">${esc(b.id)}</span>`)}
+          ${row('Club consigliati', (b.clubIds || []).map(id => clubs[id]).filter(Boolean).map(c => UI.clubTag(c)).join(' ') || '<span class="muted">Nessuno</span>')}
+          ${row('Altre copie', others.length ? others.map(o => `<button type="button" class="cat-link" data-cat="${esc(o.catalogo)}">${UI.catTag(o.catalogo)} <small>${o.stato === 'Disponibile' ? 'disponibile' : 'in prestito'}</small></button>`).join(' ') : '')}
+        </dl>
+        <h3 class="view-sec"><i class="fa-solid fa-clock-rotate-left"></i> Storico prestiti di questa copia <span class="n">${loans.length}</span></h3>
+        ${loans.length ? `<div class="table-wrap"><table class="table table-compact table-cards"><thead><tr><th>Iscritto</th><th>Uscita</th><th>Rientro</th><th>Stato</th></tr></thead><tbody>
+          ${loans.map(l => `<tr><td data-label="Iscritto"><div class="cell-title">${esc(l.socio.nome)} ${esc(l.socio.cognome)}</div><div class="cell-sub">${esc(store.clubName(l.socio.clubId))}</div></td>
+            <td data-label="Uscita" class="mono">${D.fmt(l.dataUscita)}</td><td data-label="Rientro" class="mono">${l.dataRestituzione ? D.fmt(l.dataRestituzione) : '—'}</td><td data-label="Stato">${UI.statusTag(l)}</td></tr>`).join('')}
+          </tbody></table></div>` : UI.empty('fa-clock-rotate-left', 'Ancora intonsa', 'Questa copia non è mai uscita in prestito: il suo storico comparirà qui.')}`;
+      openDlg('view-dialog');
+      try { const svg = await Scanner.qrSvg(qrText(b.catalogo), 132); if (viewing === b.id) $id('view-qr').innerHTML = svg + `<span class="mono">${esc(b.catalogo)}</span>`; }
+      catch { $id('view-qr').innerHTML = `<span class="mono">${esc(b.catalogo)}</span><small class="muted">QR non disponibile</small>`; }
+    }
+
+    /* ---------- Etichette da stampare: QR + numero di catalogo + titolo + scaffale ---------- */
+    /* Formati di fogli adesivi A4 (misure standard in commercio). Le piccole stanno in 65 per foglio. */
+    const LABEL_FMT = {
+      s: { nome: 'Piccole', w: 38.1, h: 21.2, cols: 5, rows: 13, mt: 10.7, ml: 4.75, cg: 2.5, qr: 15.5 },
+      m: { nome: 'Medie', w: 48.5, h: 25.4, cols: 4, rows: 11, mt: 8.8, ml: 8, cg: 0, qr: 19 },
+      l: { nome: 'Grandi', w: 70, h: 37.125, cols: 3, rows: 8, mt: 0, ml: 0, cg: 0, qr: 25 }
+    };
+    let labelBooks = [];
+    const savedFmt = () => { try { const v = localStorage.getItem('fg_label_fmt'); return LABEL_FMT[v] ? v : 's'; } catch { return 's'; } };
+    function printLabels(books) {
+      labelBooks = books.filter(b => b.catalogo);
+      if (!labelBooks.length) return toast('Nessun volume da etichettare con i filtri attuali.', 'err');
+      const cur = savedFmt();
+      $id('lb-formats').innerHTML = Object.entries(LABEL_FMT).map(([k, f]) => `
+        <label class="lb-fmt"><input type="radio" name="lb-fmt" value="${k}" ${k === cur ? 'checked' : ''}>
+          <span class="lb-prev" style="--c:${f.cols};--r:${f.rows}" aria-hidden="true">${'<i></i>'.repeat(Math.min(f.cols * f.rows, 65))}</span>
+          <span class="lb-t"><b>${f.nome}</b><small>${f.cols * f.rows} per foglio · ${String(f.w).replace('.', ',')} × ${String(Math.round(f.h * 10) / 10).replace('.', ',')} mm</small></span></label>`).join('');
+      $id('lb-start').value = 1; lbSummary();
+      openDlg('labels-dialog');
+    }
+    function lbSummary() {
+      const f = LABEL_FMT[(document.querySelector('input[name="lb-fmt"]:checked') || {}).value || 's'], per = f.cols * f.rows;
+      const start = Math.min(Math.max(1, parseInt($id('lb-start').value, 10) || 1), per);
+      $id('lb-start').max = per;
+      const sheets = Math.ceil((labelBooks.length + start - 1) / per);
+      $id('lb-summary').textContent = `${labelBooks.length === 1 ? '1 etichetta' : labelBooks.length + ' etichette'} su ${sheets === 1 ? '1 foglio' : sheets + ' fogli'} A4${start > 1 ? `, iniziando dalla posizione ${start}` : ''}.`;
+    }
+    async function doPrintLabels() {
+      const k = (document.querySelector('input[name="lb-fmt"]:checked') || {}).value || 's', f = LABEL_FMT[k], per = f.cols * f.rows;
+      try { localStorage.setItem('fg_label_fmt', k); } catch { /* preferenza facoltativa */ }
+      const start = Math.min(Math.max(1, parseInt($id('lb-start').value, 10) || 1), per);
+      $id('lb-print').disabled = true;
+      let qr;
+      try { qr = await Promise.all(labelBooks.map(b => Scanner.qrSvg(qrText(b.catalogo), 120))); }
+      catch { $id('lb-print').disabled = false; return toast('Impossibile generare i QR code: controlla che il file zxing.min.js sia nella cartella.', 'err'); }
+      /* posizioni vuote all'inizio (per riusare un foglio già in parte utilizzato), poi un foglio A4 ogni "per" etichette */
+      const cells = [...Array(start - 1).fill(''), ...labelBooks.map((b, i) => `
+        <div class="label">
+          <div class="label-qr">${qr[i]}</div>
+          <div class="label-t">
+            <span class="label-org">Biblioteca Spes-F</span>
+            <b class="label-cat">${esc(b.catalogo)}</b>
+            <span class="label-title">${esc(b.titolo)}</span>
+            <span class="label-sub">${esc(b.autore)}${b.scaffale ? ' · Scaff. ' + esc(b.scaffale) : ''}</span>
+          </div>
+        </div>`)];
+      const sheets = [];
+      for (let i = 0; i < cells.length; i += per) sheets.push(`<div class="sheet">${cells.slice(i, i + per).map(c => c || '<div class="label empty"></div>').join('')}</div>`);
+      const el = $id('labels');
+      el.className = `print-only labels fmt-${k}`;
+      el.style.cssText = `--w:${f.w}mm;--h:${f.h}mm;--cols:${f.cols};--mt:${f.mt}mm;--ml:${f.ml}mm;--cg:${f.cg}mm;--qr:${f.qr}mm`;
+      el.innerHTML = sheets.join('');
+      $id('lb-print').disabled = false;
+      closeDlg('labels-dialog');
+      Exporter.print(labelBooks.length === 1 ? `Etichetta ${labelBooks[0].catalogo}` : 'Etichette catalogo Biblioteca Spes-F');
+    }
+
+    /* ---------- Migliora la classificazione: ricontrolla i libri con un genere generico ---------- */
+    function renderReclassNote(all) {
+      const n = all.filter(b => GenreGuess.isGeneric(b.genere)).length;
+      $id('reclass-note').classList.toggle('hidden', n === 0);
+      if (n) $id('reclass-text').innerHTML = `<b>${n === 1 ? '1 libro ha' : n + ' libri hanno'} un genere generico</b> (Narrativa, Saggistica o Varie). Il programma può cercare un genere più preciso per ciascuno.`;
+    }
+    let rc = { rows: [], running: false, stop: false };
+    function rcTargets() { return store.getBooks().filter(b => $id('rc-all').checked || GenreGuess.isGeneric(b.genere)); }
+    function openReclass() {
+      rc = { rows: [], running: false, stop: false };
+      $id('rc-all').checked = false; $id('rc-wrap').classList.add('hidden'); $id('rc-progress').classList.add('hidden');
+      $id('rc-apply').classList.add('hidden'); $id('rc-start').classList.remove('hidden'); $id('rc-start').disabled = false;
+      $id('rc-start').innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Analizza';
+      rcIntro(); openDlg('reclass-dialog');
+    }
+    function rcIntro() {
+      const n = rcTargets().length;
+      $id('rc-intro').textContent = n ? `Verranno controllati ${n === 1 ? '1 libro' : n + ' libri'}: per ognuno si cercano online argomenti, classificazione e descrizione (con l’ISBN, oppure con titolo e autore). Alla fine vedrai le proposte e sceglierai quali applicare: nulla cambia finché non premi “Applica”.` : 'Nessun libro da controllare: tutti hanno già un genere specifico.';
+      $id('rc-start').disabled = !n;
+    }
+    async function runReclass() {
+      if (rc.running) { rc.stop = true; return; }
+      const list = rcTargets(); if (!list.length) return;
+      rc = { rows: [], running: true, stop: false };
+      $id('rc-start').innerHTML = '<i class="fa-solid fa-stop"></i> Interrompi'; $id('rc-apply').classList.add('hidden');
+      $id('rc-progress').classList.remove('hidden'); $id('rc-wrap').classList.add('hidden');
+      const pending = []; /* generi nuovi proposti durante l'analisi: i libri successivi riusano lo stesso nome */
+      let done = 0, i = 0;
+      const step = async () => {
+        while (i < list.length && !rc.stop) {
+          const b = list[i++];
+          let extra = null;
+          try { extra = b.isbn ? await ISBN.lookup(b.isbn) : await ISBN.searchText(b.titolo, b.autore); } catch { extra = null; }
+          const info = { titolo: b.titolo, autore: b.autore, editore: b.editore, soggetti: (extra && extra.soggetti && extra.soggetti.length ? extra.soggetti : b.soggetti) || [], dewey: (extra && extra.dewey && extra.dewey.length ? extra.dewey : b.dewey ? [b.dewey] : []), collana: (extra && extra.collana) || '', descrizione: (extra && extra.descrizione) || '' };
+          const genres = [...store.getGenres(), ...pending.map(n => ({ id: 'pending-' + n, nome: n }))];
+          const r = GenreGuess.classify(info, genres, store.getBooks(), b.id);
+          /* si propone solo un miglioramento: da un genere generico a uno specifico (o da "Varie" a Narrativa/Saggistica) */
+          const better = !GenreGuess.isGeneric(r.genere) || (!r.varie && /^varie$/i.test(String(b.genere).trim()));
+          if (!better) { rc.rows.push({ b, genere: b.genere, motivo: '', nuovo: false, soggetti: [], dewey: '' }); done++; continue; }
+          if (r.nuovo && !pending.includes(r.genere)) pending.push(r.genere);
+          rc.rows.push({ b, genere: r.genere, motivo: r.motivo, nuovo: r.nuovo || pending.includes(r.genere), soggetti: info.soggetti, dewey: (info.dewey || []).find(x => /\d{3}/.test(x)) || '' });
+          done++;
+          $id('rc-bar').style.width = `${Math.round((done / list.length) * 100)}%`;
+          $id('rc-status').textContent = `Controllati ${done} di ${list.length}…`;
+        }
+      };
+      await Promise.all([step(), step()]); /* due libri alla volta: veloce senza sovraccaricare i cataloghi online */
+      rc.running = false;
+      $id('rc-start').innerHTML = '<i class="fa-solid fa-rotate"></i> Analizza di nuovo';
+      const changed = rc.rows.filter(x => x.genere !== x.b.genere).length;
+      $id('rc-status').textContent = rc.stop ? `Interrotto: controllati ${done} di ${list.length}. ${changed} proposte.` : `Fatto: ${changed === 1 ? '1 proposta' : changed + ' proposte'} di genere più preciso su ${done} libri.`;
+      rcRender(pending);
+    }
+    function rcRender(pending) {
+      const names = [...new Set([...store.getGenres().map(g => g.nome), ...pending])];
+      const rows = rc.rows.filter(x => x.genere !== x.b.genere);
+      $id('rc-wrap').classList.toggle('hidden', !rows.length);
+      $id('rc-apply').classList.toggle('hidden', !rows.length);
+      $id('rc-tbody').innerHTML = rows.map(x => `
+        <tr data-rc="${esc(x.b.id)}">
+          <td data-label="Applica"><input type="checkbox" class="rc-ck" checked aria-label="Applica a ${esc(x.b.titolo)}"></td>
+          <td data-label="Volume"><div class="cell-title">${esc(x.b.titolo)}</div><div class="cell-sub">${UI.catTag(x.b.catalogo)} ${esc(x.b.autore)}</div></td>
+          <td data-label="Attuale"><span class="muted">${esc(x.b.genere)}</span></td>
+          <td data-label="Proposto"><select class="input rc-sel" aria-label="Genere proposto per ${esc(x.b.titolo)}">${names.map(n => `<option ${n === x.genere ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
+            <div class="cell-sub">${x.nuovo ? '<span class="tag plain">nuovo genere</span> ' : ''}${esc(x.motivo)}</div></td>
+        </tr>`).join('');
+    }
+    function applyReclass() {
+      const rows = [...$id('rc-tbody').querySelectorAll('tr[data-rc]')].filter(tr => tr.querySelector('.rc-ck').checked);
+      if (!rows.length) return toast('Seleziona almeno un libro.', 'err');
+      const created = [];
+      const changes = rows.map((tr) => {
+        const x = rc.rows.find(r => r.b.id === tr.dataset.rc); let genere = tr.querySelector('.rc-sel').value;
+        if (!store.getGenres().some(g => g.nome === genere)) {
+          const twin = GenreGuess.findSimilar(genere, store.getGenres());
+          if (twin) genere = twin.nome; else { const rg = store.addGenre({ nome: genere }); if (rg.ok) created.push(rg.genre.nome); }
+        }
+        return { id: x.b.id, genere, soggetti: x.soggetti, dewey: x.dewey };
+      });
+      const r = store.bulkSetGenres(changes);
+      if (!r.ok) return toast(r.error, 'err');
+      toast(`Genere aggiornato per ${r.n === 1 ? '1 libro' : r.n + ' libri'}${created.length ? ` · nuovi generi: ${created.join(', ')}` : ''}`);
+      closeDlg('reclass-dialog'); fillFilters(); render();
+    }
+
+    /* ---------- Finestra "Generi del catalogo" ---------- */
+    let gEdit = null, gDel = null;
+    const swatches = (name, sel) => FG.coloriGeneri.map((c, i) => `<label class="swatch" style="--cc:${c}"><input type="radio" name="${name}" value="${c}" ${c === sel ? 'checked' : ''} aria-label="Colore ${i + 1}"><span></span></label>`).join('');
+    function nextFreeColor() { const used = store.getGenres().map(g => g.colore); return FG.coloriGeneri.find(c => !used.includes(c)) || FG.coloriGeneri[0]; }
+    /* Generi che parlano della stessa cosa (es. "Fede" e "Spiritualità & Valori"): si propone di unirli */
+    function renderSimilar() {
+      const box = $id('genre-similar'), pairs = GenreGuess.similar(store.getGenres());
+      box.classList.toggle('hidden', !pairs.length);
+      box.innerHTML = pairs.length ? `<p><i class="fa-solid fa-code-merge"></i> <b>Generi simili</b>: unendoli, i libri finiscono in un solo genere e i suggerimenti automatici diventano più precisi.</p>
+        <ul>${pairs.map(([a, b]) => {
+          const na = store.genreCount(a.nome), nb = store.genreCount(b.nome), [from, to] = na > nb ? [b, a] : [a, b];
+          return `<li><span><b>${esc(from.nome)}</b> <small>(${store.genreCount(from.nome)})</small> <i class="fa-solid fa-arrow-right"></i> <b>${esc(to.nome)}</b> <small>(${store.genreCount(to.nome)})</small></span><button class="btn btn-sm" data-gmerge="${esc(from.id)}" data-into="${esc(to.id)}">Unisci</button></li>`;
+        }).join('')}</ul>` : '';
+    }
+    function renderGenres() {
+      renderSimilar();
+      const list = store.getGenres();
+      $id('genre-list-ui').innerHTML = list.length ? list.map(g => {
+        const n = store.genreCount(g.nome);
+        if (gEdit === g.id) return `
+          <li class="genre-row editing" style="--cc:${g.colore}">
+            <form class="genre-edit" data-gsave="${esc(g.id)}">
+              <input class="input" name="nome" maxlength="40" value="${esc(g.nome)}" aria-label="Nome del genere">
+              <div class="swatches small" role="radiogroup" aria-label="Colore">${swatches('gcol-edit', g.colore)}</div>
+              <span class="actions"><button class="btn btn-primary btn-sm" type="submit">Salva</button><button class="btn btn-sm" type="button" data-gcancel>Annulla</button></span>
+            </form>
+          </li>`;
+        if (gDel === g.id) {
+          const others = list.filter(x => x.id !== g.id);
+          return `
+          <li class="genre-row deleting" style="--cc:${g.colore}">
+            <span class="gdot"></span>
+            <div class="gname"><b>${esc(g.nome)}</b><small>${n === 1 ? '1 volume usa' : n + ' volumi usano'} questo genere. In quale genere li sposto?</small></div>
+            <div class="genre-move">
+              <select class="input" data-gtarget aria-label="Genere di destinazione">${others.map(x => `<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join('')}</select>
+              <button class="btn btn-sm btn-danger" data-gconfirm="${esc(g.id)}" ${others.length ? '' : 'disabled'}>Sposta ed elimina</button>
+              <button class="btn btn-sm" data-gcancel>Annulla</button>
+            </div>
+          </li>`;
+        }
+        return `
+          <li class="genre-row" style="--cc:${g.colore}">
+            <span class="gdot"></span>
+            <div class="gname"><b>${esc(g.nome)}</b><small>${n === 0 ? 'Nessun volume' : n === 1 ? '1 volume' : n + ' volumi'}</small></div>
+            <span class="actions">
+              <button class="icon-btn" data-gedit="${esc(g.id)}" aria-label="Modifica ${esc(g.nome)}"><i class="fa-solid fa-pen"></i></button>
+              <button class="icon-btn danger" data-gdel="${esc(g.id)}" aria-label="Elimina ${esc(g.nome)}"><i class="fa-solid fa-trash"></i></button>
+            </span>
+          </li>`;
+      }).join('') : `<li>${UI.empty('fa-tags', 'Nessun genere', 'Aggiungi il primo genere qui sopra.')}</li>`;
+      staggerOnce($id('genre-list-ui'));
+    }
+    function genresChanged() { renderGenres(); fillFilters(); render(); }
+    function openGenres() {
+      gEdit = gDel = null;
+      $id('g-new').value = '';
+      $id('g-new-colors').innerHTML = swatches('gcol-new', nextFreeColor());
+      delete $id('genre-list-ui').dataset.st;
+      renderGenres(); openDlg('genres-dialog');
+      setTimeout(() => $id('g-new').focus(), 60);
+    }
+
+    onReady(() => {
+      $id('btn-genres').addEventListener('click', openGenres);
+      $id('reclass-open').addEventListener('click', openReclass);
+      $id('lb-formats').addEventListener('change', lbSummary);
+      $id('lb-start').addEventListener('input', lbSummary);
+      $id('lb-print').addEventListener('click', doPrintLabels);
+      $id('rc-all').addEventListener('change', rcIntro);
+      $id('rc-start').addEventListener('click', runReclass);
+      $id('rc-apply').addEventListener('click', applyReclass);
+      $id('rc-check-all').addEventListener('change', (e) => $id('rc-tbody').querySelectorAll('.rc-ck').forEach(c => { c.checked = e.target.checked; }));
+      $id('reclass-dialog').addEventListener('close', () => { rc.stop = true; });
+      $id('book-genres-manage').addEventListener('click', openGenres);
+      $id('genre-chips').addEventListener('click', (e) => {
+        const c = e.target.closest('[data-g]'); if (!c) return;
+        $id('f-genre').value = c.dataset.g; pg.page = 1; render();
+      });
+      $id('genre-similar').addEventListener('click', async (e) => {
+        const m = e.target.closest('[data-gmerge]'); if (!m) return;
+        const from = store.getGenre(m.dataset.gmerge), to = store.getGenre(m.dataset.into); if (!from || !to) return;
+        const n = store.genreCount(from.nome);
+        if (!(await UI.confirm(`${n ? (n === 1 ? '1 volume passa' : n + ' volumi passano') + ` da “${from.nome}” a “${to.nome}”` : `“${from.nome}” non ha volumi`} e il genere “${from.nome}” viene eliminato.`, { title: 'Unire i due generi?', ok: `Unisci in “${to.nome}”` }))) return;
+        const r = store.deleteGenre(from.id, n ? to.id : null);
+        r.ok ? toast(`Generi uniti in “${to.nome}”`) : toast(r.error, 'err');
+        genresChanged();
+      });
+      $id('genre-add').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const colore = (document.querySelector('input[name="gcol-new"]:checked') || {}).value;
+        /* prima di creare un genere, si controlla che non ne esista già uno simile */
+        const twin = GenreGuess.findSimilar($id('g-new').value, store.getGenres());
+        if (twin && !(await UI.confirm(`Esiste già il genere “${twin.nome}”, che riguarda lo stesso argomento. Due generi simili dividono i libri e confondono i suggerimenti automatici.`, { title: `Creare comunque “${$id('g-new').value.trim()}”?`, ok: 'Crea comunque', cancel: `Usa “${twin.nome}”` }))) {
+          if ($id('book-dialog').open) { fillBookGenres(twin.nome); closeDlg('genres-dialog'); }
+          $id('g-new').value = ''; return;
+        }
+        const r = store.addGenre({ nome: $id('g-new').value, colore });
+        if (!r.ok) return toast(r.error, 'err');
+        toast(`Genere aggiunto: ${r.genre.nome}`);
+        $id('g-new').value = ''; $id('g-new-colors').innerHTML = swatches('gcol-new', nextFreeColor());
+        genresChanged();
+        if ($id('book-dialog').open) fillBookGenres(r.genre.nome);
+      });
+      $id('genre-list-ui').addEventListener('click', async (e) => {
+        const ed = e.target.closest('[data-gedit]'), del = e.target.closest('[data-gdel]'), cancel = e.target.closest('[data-gcancel]'), conf = e.target.closest('[data-gconfirm]');
+        if (cancel) { gEdit = gDel = null; return renderGenres(); }
+        if (ed) { gEdit = ed.dataset.gedit; gDel = null; renderGenres(); const i = $id('genre-list-ui').querySelector('.genre-edit input'); if (i) { i.focus(); i.select(); } return; }
+        if (del) {
+          const g = store.getGenre(del.dataset.gdel);
+          if (store.genreCount(g.nome)) { gDel = g.id; gEdit = null; return renderGenres(); }
+          if (!(await UI.confirm('Nessun volume usa questo genere.', { title: `Eliminare il genere “${g.nome}”?`, ok: 'Elimina', danger: true }))) return;
+          const r = store.deleteGenre(g.id); r.ok ? toast('Genere eliminato') : toast(r.error, 'err'); return genresChanged();
+        }
+        if (conf) {
+          const target = $id('genre-list-ui').querySelector('[data-gtarget]').value;
+          const g = store.getGenre(conf.dataset.gconfirm), t = store.getGenre(target);
+          const r = store.deleteGenre(conf.dataset.gconfirm, target);
+          if (!r.ok) return toast(r.error, 'err');
+          gDel = null; toast(`“${g.nome}” eliminato: ${r.moved === 1 ? '1 volume spostato' : r.moved + ' volumi spostati'} in “${t.nome}”`);
+          return genresChanged();
+        }
+      });
+      $id('genre-list-ui').addEventListener('submit', (e) => {
+        const f = e.target.closest('[data-gsave]'); if (!f) return;
+        e.preventDefault();
+        const colore = (f.querySelector('input[name="gcol-edit"]:checked') || {}).value;
+        const r = store.updateGenre(f.dataset.gsave, { nome: f.querySelector('input[name="nome"]').value, colore });
+        if (!r.ok) return toast(r.error, 'err');
+        gEdit = null; toast(r.moved ? `Genere aggiornato anche in ${r.moved === 1 ? '1 volume' : r.moved + ' volumi'}` : 'Genere aggiornato');
+        genresChanged();
+      });
+
+      fillFilters();
+
+      ['f-search', 'f-genre', 'f-club', 'f-status'].forEach(id => $id(id).addEventListener('input', () => { pg.page = 1; render(); }));
+      UI.bindPager($id('books-pager'), pg, render);
+      /* Invio nella ricerca con un numero di catalogo esatto: apre direttamente la scheda */
+      $id('f-search').addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const v = e.target.value.trim();
+        if (BiblioStore.isCatCode(v)) { e.preventDefault(); showByCatalog(v); }
+      });
+      $id('btn-labels').addEventListener('click', () => printLabels(filtered()));
+      $id('view-label').addEventListener('click', () => { const b = store.getBooks().find(x => x.id === viewing); if (b) printLabels([b]); });
+      const addCopyOf = (b) => {
+        openBook(null); copyFrom(b);
+        if (b.isbn) $id('book-isbn').value = b.isbn;
+        dupNote(store.copiesOfBook(b), false);
+        say('Dati copiati: controlla lo scaffale e salva.', 'ok');
+      };
+      $id('view-copy').addEventListener('click', () => { const b = store.getBooks().find(x => x.id === viewing); if (!b) return; closeDlg('view-dialog'); addCopyOf(b); });
+      $id('qty-box').addEventListener('click', (e) => { const st = e.target.closest('[data-step]'); if (!st) return; $id('book-qty').value = Math.max(1, Math.min(BiblioStore.MAX_COPIE, qtyValue() + Number(st.dataset.step))); showQty(); });
+      $id('book-qty').addEventListener('input', showQty);
+      $id('book-qty').addEventListener('change', () => { $id('book-qty').value = qtyValue(); showQty(); });
+      $id('btn-export').addEventListener('click', exportCatalog);
+      $id('books-empty').addEventListener('click', (e) => { if (e.target.closest('[data-first-book]')) openBook(null); });
+      $id('view-edit').addEventListener('click', () => { const b = store.getBooks().find(x => x.id === viewing); if (!b) return; closeDlg('view-dialog'); openBook(b); });
+      $id('view-body').addEventListener('click', (e) => { const c = e.target.closest('[data-cat]'); if (c) showByCatalog(c.dataset.cat); });
+      $id('btn-new').addEventListener('click', () => openBook(null));
+      $id('btn-isbn').addEventListener('click', () => handleISBN($id('book-isbn').value));
+      $id('book-genre').addEventListener('change', () => { genreByHand = true; clearGenreHint(); });
+      /* senza ISBN: dall'autore scritto a mano si può già capire il genere (se ci sono altri suoi libri) */
+      /* Inserimento a mano: il genere si riempie da titolo e autore (autori noti, libri già in catalogo),
+         poi si affina con argomenti e descrizione trovati online per titolo e autore */
+      let textSeq = 0;
+      const byText = async () => {
+        if ($id('book-id').value || genreByHand) return;
+        const t = $id('book-title').value.trim(), a = $id('book-author').value.trim();
+        if (!t && !a) return;
+
+        suggestGenre(genreInfo({ descrizione: lastDesc }));
+        if (lastFromIsbn || t.length < 2) return;
+        const seq = ++textSeq;
+        $id('genre-hint').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i><span>Cerco il genere più adatto…</span>'; $id('genre-hint').className = 'genre-hint muted';
+        let r = null; try { r = await ISBN.searchText(t, a); } catch { /* senza rete resta la scelta fatta con titolo e autore */ }
+        if (seq !== textSeq || genreByHand || !$id('book-dialog').open) return;
+        if (r) { lastSubjects = r.soggetti; lastDesc = r.descrizione; }
+        suggestGenre(genreInfo({ descrizione: lastDesc }));
+      };
+      /* libro senza ISBN già presente con lo stesso titolo e autore: si avvisa che sarà un'altra copia */
+      const sameTitle = () => {
+        if ($id('book-id').value || ISBN.clean($id('book-isbn').value)) return;
+        const t = $id('book-title').value.trim(), a = $id('book-author').value.trim();
+        const same = t ? store.copiesOfBook({ titolo: t, autore: a, isbn: '' }) : [];
+        if (same.length) dupNote(same, false); else $id('dup-note').classList.add('hidden');
+      };
+      ['book-title', 'book-author'].forEach(id => $id(id).addEventListener('change', () => { sameTitle(); byText(); }));
+      $id('btn-scan').addEventListener('click', async () => { const isbn = await Scanner.scan(); if (isbn) handleISBN(isbn); });
+      $id('btn-scan-search').addEventListener('click', scanSearch);
+      $id('book-isbn').addEventListener('change', () => { if (ISBN.normalize($id('book-isbn').value)) handleISBN($id('book-isbn').value, { auto: true }); });
+      $id('book-isbn').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleISBN($id('book-isbn').value); } });
+      $id('cover-remove').addEventListener('click', () => setCover(''));
+      $id('cover-img').addEventListener('error', () => setCover(''));
+      /* Copertina non raggiungibile: si torna alla copertina colorata */
+      $id('books-grid').addEventListener('error', (e) => {
+        if (!e.target.classList || !e.target.classList.contains('cover-img')) return;
+        const cover = e.target.closest('.cover'), cap = cover.nextElementSibling;
+        e.target.remove(); cover.classList.remove('has-img');
+        cover.querySelector('h3').classList.remove('sr-only');
+        if (cap && cap.classList.contains('book-caption')) {
+          const a = document.createElement('span'); a.className = 'author'; a.textContent = cap.querySelector('.cell-sub').textContent;
+          cover.appendChild(a); cap.remove();
+        }
+      }, true);
+
+      $id('books-grid').addEventListener('keydown', (e) => {
+        const v = e.target.closest('.cover[role="button"]');
+        if (v && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); v.click(); }
+      });
+      $id('books-grid').addEventListener('click', async (e) => {
+        const find = (id) => store.getBooks().find(x => x.id === id);
+        const ex = e.target.closest('[data-expand]');
+        if (ex) return toggleCopies(ex.dataset.expand);
+        const ac = e.target.closest('[data-addcopy]');
+        if (ac) { const b = find(ac.dataset.addcopy); if (b) addCopyOf(b); return; }
+        const vw = e.target.closest('[data-view]');
+        if (vw) { const b = find(vw.dataset.view); if (b) openView(b); return; }
+        const ed = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
+        if (ed) { const b = find(ed.dataset.edit); if (b) openBook(b); return; }
+        if (del) {
+          const b = find(del.dataset.del); if (!b) return;
+          /* si elimina solo la copia scelta, e mai se è fuori in prestito */
+          if (b.stato === 'In Prestito') return toast(`La copia ${b.catalogo} è in prestito: registra prima la restituzione.`, 'err');
+          const altre = store.copiesOfBook(b).length - 1;
+          if (!(await UI.confirm(`La copia ${b.catalogo || b.id} verrà tolta dal catalogo. ${altre ? `Le altre ${altre === 1 ? 'copia resta' : altre + ' copie restano'} al loro posto. ` : ''}Il suo numero non sarà mai riassegnato ad altri volumi; lo storico dei prestiti resta nel riepilogo.`, { title: altre ? `Eliminare la copia ${b.catalogo} di “${b.titolo}”?` : `Eliminare “${b.titolo}”?`, ok: altre ? 'Elimina questa copia' : 'Elimina il volume', danger: true }))) return;
+          const r = store.deleteBook(b.id);
+          r.ok ? toast(altre ? `Copia ${b.catalogo} eliminata` : 'Volume eliminato') : toast(r.error, 'err');
+          fillFilters(); render(); updateBadge();
+        }
+      });
+
+      $id('book-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitter = e.submitter;
+        const data = {
+          isbn: $id('book-isbn').value.trim(), titolo: $id('book-title').value.trim(), autore: $id('book-author').value.trim(),
+          genere: $id('book-genre').value.trim(), scaffale: $id('book-shelf').value.trim(),
+          editore: $id('book-publisher').value.trim(), anno: $id('book-year').value.trim(), copertina: $id('book-cover').value,
+          clubIds: [...document.querySelectorAll('#book-clubs input:checked')].map(i => i.value)
+        };
+        /* argomenti trovati online: servono a suggerire il genere dei libri futuri */
+        if (lastSubjects.length) data.soggetti = lastSubjects.slice(0, 12);
+        const dw = lastDewey.find(x => /\d{3}/.test(x)); if (dw) data.dewey = String(dw).slice(0, 80); /* classificazione Dewey SBN: serve a suggerire il genere dei libri simili */
+        const id = $id('book-id').value;
+        /* Modifica di un titolo con più copie: vale per tutte o solo per questa? */
+        let allCopies = false;
+        if (id) {
+          const cur = store.getBooks().find(x => x.id === id);
+          if (!cur) return toast('Volume non trovato.', 'err');
+          const group = store.copiesOfBook(cur);
+          const same = (k) => k === 'clubIds' ? [...(cur.clubIds || [])].sort().join() === [...data.clubIds].sort().join()
+            : k === 'isbn' ? ISBN.clean(cur.isbn || '') === ISBN.clean(data.isbn) || ISBN.same(cur.isbn, data.isbn)
+            : k === 'anno' ? String(cur.anno || '') === ((data.anno.match(/\d{4}/) || [''])[0])
+            : String(cur[k] || '') === String(data[k] || '');
+          const NOMI = { isbn: 'ISBN', titolo: 'titolo', autore: 'autore', genere: 'genere', scaffale: 'scaffale', editore: 'editore', anno: 'anno', copertina: 'copertina', clubIds: 'club consigliati' };
+          const changed = Object.keys(NOMI).filter(k => !same(k));
+          if (group.length > 1 && changed.length) {
+            const pick = await UI.choose(`Hai cambiato: ${changed.map(k => NOMI[k]).join(', ')}.\n“${cur.titolo}” ha ${group.length} copie in catalogo (${group.slice(0, 6).map(c => c.catalogo).join(', ')}${group.length > 6 ? '…' : ''}).`, {
+              title: 'Applicare la modifica a tutte le copie?', icon: 'fa-layer-group',
+              options: [
+                { value: 'all', label: `A tutte le ${group.length} copie`, hint: 'I dati cambiati vengono riportati su ogni copia. I numeri di catalogo non cambiano.', icon: 'fa-layer-group', primary: true },
+                { value: 'one', label: `Solo a questa copia (${cur.catalogo})`, hint: 'Le altre copie restano come sono.', icon: 'fa-book' }
+              ], cancel: 'Torna alla scheda' });
+            if (!pick) return;
+            allCopies = pick === 'all';
+          }
+        }
+        /* genere proposto in automatico che ancora non esiste: si crea ora (o si usa un tuo genere simile) */
+        let created = null;
+        if (data.genere && !store.getGenres().some(g => g.nome === data.genere)) {
+          const twin = GenreGuess.findSimilar(data.genere, store.getGenres());
+          if (twin) data.genere = twin.nome;
+          else { const rg = store.addGenre({ nome: data.genere }); if (rg.ok) { created = rg.genre.nome; data.genere = created; } }
+        }
+        const qty = id ? 1 : qtyValue();
+        const had = id ? 0 : store.copiesOfBook({ ...data, isbn: ISBN.normalize(data.isbn) || ISBN.clean(data.isbn) }).length;
+        const r = id ? store.updateBook(id, data, { allCopies }) : store.addCopies(data, qty);
+        if (created) { fillFilters(); setTimeout(() => toast(`Nuovo genere creato: ${created}`), 350); }
+        if (!r.ok) return toast(r.error, 'err');
+        const saved = id ? store.getBooks().find(x => x.id === id) : r.book;
+        const made = id ? [saved] : r.books;
+        const again = !id && submitter && submitter.id === 'book-submit-next';
+        const last = made[made.length - 1];
+        const msg = id ? (allCopies ? `Aggiornate tutte le ${r.copies} copie di “${saved.titolo}”` : `Volume aggiornato: ${saved.catalogo}`)
+          : qty > 1 ? `${qty} copie aggiunte: ${saved.catalogo} – ${last.catalogo}`
+          : had ? `Nuova copia aggiunta: ${saved.catalogo}` : `Volume aggiunto: ${saved.catalogo}`;
+        toast(msg, 'ok', { action: { label: id ? 'Apri scheda' : qty > 1 ? 'Stampa etichette' : 'Stampa etichetta', run: () => id ? openView(saved) : printLabels(made) } });
+        fillFilters(); updateBadge();
+        if (again) {
+          /* pronto per il libro successivo: genere, scaffale e club restano quelli appena usati */
+          const keep = { genere: data.genere, scaffale: data.scaffale, clubIds: data.clubIds };
+          openBook(null);
+          fillBookGenres(keep.genere); $id('book-shelf').value = keep.scaffale;
+          document.querySelectorAll('#book-clubs input').forEach(i => { i.checked = keep.clubIds.includes(i.value); });
+          say(`Salvato ${qty > 1 ? `${saved.catalogo} – ${last.catalogo}` : saved.catalogo}. Scansiona o scrivi l’ISBN del prossimo libro.`, 'ok');
+        } else closeDlg('book-dialog');
+        /* si va alla pagina del titolo e, se ha più copie, si apre l'elenco con la copia in evidenza */
+        if (filtered().some(b => b.id === saved.id)) revealCopy(saved.id); else render();
+      });
+
+      /* Catalogo in Excel: un foglio con i titoli (quante copie, quante libere) e uno con ogni copia */
+      function exportCatalog() {
+        const titles = store.getTitles(), books = store.getBooks();
+        if (!books.length) return toast('Il catalogo è vuoto: non c’è nulla da esportare.', 'err');
+        const clubs = Object.fromEntries(store.getClubs().map(c => [c.id, c.nome]));
+        const lent = new Map(store.getCalculatedLoans().filter(l => !l.dataRestituzione).map(l => [l.libroId, l]));
+        const cl = (b) => (b.clubIds || []).map(id => clubs[id]).filter(Boolean).join(', ');
+        const oggi = D.iso(D.today());
+        Exporter.xlsx(`catalogo-spes-f-${oggi}`, [
+          { name: 'Titoli', title: 'Biblioteca Spes-F – Catalogo per titoli', subtitle: `${titles.length} titoli · ${books.length} copie · aggiornato al ${D.fmtLong(oggi)}`,
+            columns: [{ header: 'Titolo', width: 42 }, { header: 'Autore', width: 28 }, { header: 'Genere', width: 22 }, { header: 'ISBN', width: 16 }, { header: 'Editore', width: 22 }, { header: 'Anno', width: 8 },
+              { header: 'Copie', type: 'number', width: 8 }, { header: 'Disponibili', type: 'number', width: 12 }, { header: 'In prestito', type: 'number', width: 12 }, { header: 'Numeri di catalogo', width: 36 }, { header: 'Club consigliati', width: 28 }],
+            rows: titles.map(t => [t.first.titolo, t.first.autore, t.first.genere, t.first.isbn || '', t.first.editore || '', t.first.anno || '', t.total, t.available, t.onLoan, t.copies.map(c => c.catalogo).join(', '), cl(t.first)]) },
+          { name: 'Copie', title: 'Biblioteca Spes-F – Elenco delle copie', subtitle: 'Una riga per ogni copia fisica, con il suo numero di catalogo',
+            columns: [{ header: 'N. catalogo', width: 13 }, { header: 'Titolo', width: 42 }, { header: 'Autore', width: 28 }, { header: 'Genere', width: 22 }, { header: 'Scaffale', width: 11 }, { header: 'ISBN', width: 16 },
+              { header: 'Stato', width: 13 }, { header: 'In prestito a', width: 26 }, { header: 'Scadenza', type: 'date', width: 12 }, { header: 'Copie del titolo', type: 'number', width: 15 }],
+            rows: titles.flatMap(t => t.copies.map(c => { const l = lent.get(c.id); return [c.catalogo, c.titolo, c.autore, c.genere, c.scaffale || '', c.isbn || '', c.stato === 'Disponibile' ? 'Disponibile' : 'In prestito', l ? `${l.socio.nome} ${l.socio.cognome}`.trim() : '', l ? l.dataScadenza : '', t.total]; })) }
+        ]);
+        toast(`Catalogo scaricato in Excel: ${titles.length} titoli, ${books.length} copie`);
+      }
+
+      const p = new URLSearchParams(location.search);
+      if (p.get('q')) $id('f-search').value = p.get('q');
+      if (p.get('club')) $id('f-club').value = p.get('club');
+      render();
+      if (p.get('action') === 'new') openBook(null);
+      if (p.get('etichette')) { history.replaceState(history.state, '', location.pathname); printLabels(filtered()); }
+      /* Aperto dal QR di un'etichetta (fotocamera del telefono): mostra subito la scheda della copia */
+      if (p.get('cat')) { showByCatalog(p.get('cat')); p.delete('cat'); history.replaceState(history.state, '', location.pathname + (p.toString() ? '?' + p : '')); }
+    });
+  </script>
+</body>
+</html>
